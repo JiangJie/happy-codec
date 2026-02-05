@@ -1,6 +1,18 @@
 # happy-codec
 
+[![License](https://img.shields.io/npm/l/happy-codec.svg)](LICENSE)
+[![Build Status](https://github.com/JiangJie/happy-codec/actions/workflows/test.yml/badge.svg)](https://github.com/JiangJie/happy-codec/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/JiangJie/happy-codec/graph/badge.svg)](https://codecov.io/gh/JiangJie/happy-codec)
+[![NPM version](https://img.shields.io/npm/v/happy-codec.svg)](https://npmjs.org/package/happy-codec)
+[![NPM downloads](https://badgen.net/npm/dm/happy-codec)](https://npmjs.org/package/happy-codec)
+[![JSR Version](https://jsr.io/badges/@happy-js/happy-codec)](https://jsr.io/@happy-js/happy-codec)
+[![JSR Score](https://jsr.io/badges/@happy-js/happy-codec/score)](https://jsr.io/@happy-js/happy-codec/score)
+
 Zero-dependency codec library for Base64, Hex, UTF-8 and ByteString encoding/decoding.
+
+---
+
+[API Documentation](https://jiangjie.github.io/happy-codec)
 
 ---
 
@@ -14,12 +26,21 @@ Zero-dependency codec library for Base64, Hex, UTF-8 and ByteString encoding/dec
 
 ## Installation
 
-```bash
+```sh
+# npm
 npm install happy-codec
-# or
-pnpm add happy-codec
-# or
+
+# yarn
 yarn add happy-codec
+
+# pnpm
+pnpm add happy-codec
+
+# JSR (Deno)
+deno add @happy-js/happy-codec
+
+# JSR (Bun)
+bunx jsr add @happy-js/happy-codec
 ```
 
 ## Usage
@@ -52,32 +73,6 @@ const text = decodeUtf8(utf8Bytes); // '你好'
 const byteStr = encodeByteString(new Uint8Array([72, 101, 108, 108, 111])); // 'Hello'
 const byteArr = decodeByteString('Hello'); // Uint8Array [72, 101, 108, 108, 111]
 ```
-
-## API
-
-### Base64
-
-- `encodeBase64(data: DataSource): string` - Encode string or BufferSource to Base64
-- `decodeBase64(data: string): Uint8Array` - Decode Base64 string to Uint8Array
-
-### Hex
-
-- `encodeHex(data: DataSource): string` - Encode to hexadecimal string
-- `decodeHex(hex: string): Uint8Array` - Decode hexadecimal string
-
-### UTF-8
-
-- `encodeUtf8(data: string): Uint8Array` - Encode string to UTF-8 bytes
-- `decodeUtf8(data: BufferSource): string` - Decode UTF-8 bytes to string
-
-### ByteString
-
-- `encodeByteString(data: DataSource): string` - Convert to byte string
-- `decodeByteString(data: string): Uint8Array` - Convert byte string to Uint8Array
-
-### Types
-
-- `DataSource = string | BufferSource` - Input type for encoding functions
 
 ## Why Pure JS Base64?
 

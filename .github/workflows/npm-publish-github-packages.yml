@@ -1,0 +1,41 @@
+# This workflow will run tests and then publish a package to GitHub Packages when a release is created.
+
+name: GitHub Package
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: latest
+          registry-url: https://npm.pkg.github.com/
+
+      - name: Install pnpm
+        run: npm install pnpm -g
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Publish to GitHub Packages
+        run: |
+          npm pkg set name="@jiangjie/happy-codec"
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

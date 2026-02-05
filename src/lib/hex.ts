@@ -10,8 +10,10 @@ import type { DataSource } from './types.ts';
  * Encodes DataSource to a hexadecimal string.
  * - String: First UTF-8 encoded, then converted to hexadecimal
  * - BufferSource: Directly converted to hexadecimal
+ *
  * @param data - The DataSource to encode.
  * @returns Hexadecimal string.
+ * @since 1.0.0
  * @example
  * ```ts
  * const hex = encodeHex(new Uint8Array([255, 0, 128]));
@@ -27,8 +29,10 @@ export function encodeHex(data: DataSource): string {
 
 /**
  * Decodes a hexadecimal string to Uint8Array.
+ *
  * @param hex - Hexadecimal string.
  * @returns Decoded Uint8Array.
+ * @since 1.0.0
  * @example
  * ```ts
  * const bytes = decodeHex('ff0080');

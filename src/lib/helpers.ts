@@ -11,6 +11,7 @@ import { encodeUtf8 } from './utf8.ts';
  * Converts DataSource to Uint8Array.
  * - String: First UTF-8 encoded
  * - BufferSource: Converted to Uint8Array
+ *
  * @param data - The data to convert.
  * @returns Converted `Uint8Array`.
  */

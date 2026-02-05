@@ -59,6 +59,7 @@ const lookup = Lazy(() => {
  *
  * @param data - The data to encode, can be a string, ArrayBuffer, TypedArray, or DataView.
  * @returns Base64 encoded string.
+ * @since 1.0.0
  * @example
  * ```ts
  * // String input
@@ -110,6 +111,7 @@ export function encodeBase64(data: DataSource): string {
  *
  * @param data - Base64 encoded string.
  * @returns Decoded Uint8Array.
+ * @since 1.0.0
  * @example
  * ```ts
  * const buffer = decodeBase64('SGVsbG8=');

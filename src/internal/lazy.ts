@@ -16,6 +16,7 @@ export interface Lazy<T> {
 
 /**
  * Creates a lazily initialized value.
+ *
  * @param init - Initialization function, executed on first call to force().
  * @returns Lazy wrapper.
  */

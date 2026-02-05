@@ -5,6 +5,8 @@
 
 /**
  * Data source type, can be a string or BufferSource.
+ *
+ * @since 1.0.0
  * @example
  * ```ts
  * // String type

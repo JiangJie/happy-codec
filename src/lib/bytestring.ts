@@ -8,8 +8,10 @@ import type { DataSource } from './types.ts';
 
 /**
  * Encodes a string or BufferSource to a byte string, with each byte as a character.
+ *
  * @param data - The string or BufferSource to encode.
  * @returns Byte string.
+ * @since 1.0.0
  * @example
  * ```ts
  * const str = encodeByteString(new Uint8Array([72, 101, 108, 108, 111]));
@@ -25,8 +27,10 @@ export function encodeByteString(data: DataSource): string {
 
 /**
  * Decodes a byte string to Uint8Array, with each character's charCode as a byte.
+ *
  * @param data - The byte string to decode.
  * @returns Uint8Array.
+ * @since 1.0.0
  * @example
  * ```ts
  * const bytes = decodeByteString('Hello');

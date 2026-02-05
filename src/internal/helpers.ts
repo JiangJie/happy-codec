@@ -5,6 +5,7 @@
 
 /**
  * Converts BufferSource to Uint8Array.
+ *
  * @param data - The BufferSource to convert.
  * @returns Uint8Array.
  */

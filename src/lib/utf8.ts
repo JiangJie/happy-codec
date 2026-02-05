@@ -15,8 +15,10 @@ const decoder = Lazy(() => new TextDecoder('utf-8', { fatal: true }));
 
 /**
  * Encodes string data to `Uint8Array` (UTF-8 encoding).
+ *
  * @param data - The string data to encode.
  * @returns Encoded `Uint8Array`.
+ * @since 1.0.0
  * @example
  * ```ts
  * const encoded = encodeUtf8('你好');
@@ -32,8 +34,10 @@ export function encodeUtf8(data: string): Uint8Array<ArrayBuffer> {
 
 /**
  * Decodes binary data to string (UTF-8 decoding).
+ *
  * @param data - The binary data to decode.
  * @returns Decoded string.
+ * @since 1.0.0
  * @example
  * ```ts
  * const decoded = decodeUtf8(new Uint8Array([228, 189, 160, 229, 165, 189]));
@@ -52,6 +56,7 @@ export function decodeUtf8(data: BufferSource): string {
 /**
  * Pure JS implementation of UTF-8 encoding.
  * Used when the platform does not support TextEncoder.
+ *
  * @param data - The string to encode.
  * @returns Encoded Uint8Array.
  */
@@ -90,6 +95,7 @@ function encodeUtf8Buffer(data: string): Uint8Array<ArrayBuffer> {
 /**
  * Pure JS implementation of UTF-8 decoding.
  * Used when the platform does not support TextDecoder.
+ *
  * @param data - The BufferSource to decode.
  * @returns Decoded string.
  */

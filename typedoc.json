@@ -1,0 +1,17 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/mod.ts"],
+  "out": "docs",
+  "readme": "none",
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": true
+  },
+  "categorizeByGroup": true,
+  "exclude": ["**/node_modules/**"],
+  "navigationLinks": {
+    "GitHub": "https://github.com/JiangJie/happy-codec",
+    "npm": "https://www.npmjs.com/package/happy-codec",
+    "JSR": "https://jsr.io/@happy-js/happy-codec"
+  }
+}

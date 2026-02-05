@@ -30,6 +30,7 @@
     "prebuild": "pnpm run check && pnpm run lint",
     "build": "pnpm exec vite build",
     "prepublishOnly": "pnpm run build",
+    "docs": "pnpm exec typedoc",
     "test": "pnpm exec vitest run --coverage",
     "test:watch": "pnpm exec vitest watch",
     "test:ui": "pnpm exec vitest --ui"
@@ -59,6 +60,7 @@
     "@stylistic/eslint-plugin": "^5.7.1",
     "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^9.39.2",
+    "typedoc": "^0.28.16",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.54.0",
     "vite-plugin-dts": "^4.5.4",

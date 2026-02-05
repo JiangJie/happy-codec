@@ -1,0 +1,67 @@
+{
+  "name": "happy-codec",
+  "description": "Zero-dependency codec library for Base64, Hex, UTF-8 and ByteString encoding/decoding.",
+  "author": "jiang115jie@gmail.com",
+  "license": "MIT",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/main.cjs",
+  "module": "dist/main.mjs",
+  "types": "dist/types.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/main.mjs",
+      "require": "./dist/main.cjs",
+      "default": "./dist/main.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md",
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "check": "pnpm exec tsc --noEmit",
+    "lint": "pnpm exec eslint .",
+    "prebuild": "pnpm run check && pnpm run lint",
+    "build": "pnpm exec vite build",
+    "prepublishOnly": "pnpm run build",
+    "test": "pnpm exec vitest run --coverage",
+    "test:watch": "pnpm exec vitest watch",
+    "test:ui": "pnpm exec vitest --ui"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JiangJie/happy-codec.git"
+  },
+  "keywords": [
+    "codec",
+    "encoding",
+    "decoding",
+    "base64",
+    "hex",
+    "utf8",
+    "utf-8",
+    "bytestring",
+    "binary",
+    "buffer",
+    "arraybuffer",
+    "uint8array",
+    "text-encoder",
+    "text-decoder"
+  ],
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@stylistic/eslint-plugin": "^5.7.1",
+    "@vitest/coverage-v8": "^4.0.18",
+    "eslint": "^9.39.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.54.0",
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^4.0.18"
+  }
+}

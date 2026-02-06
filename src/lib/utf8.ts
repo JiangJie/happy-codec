@@ -5,29 +5,21 @@
 
 import { bufferSourceToBytes, Lazy } from '../internal/mod.ts';
 
-// #region Types
-
-/**
- * Options for UTF-8 decoding.
- */
-export interface DecodeUtf8Options {
-    /**
-     * If true, throw an error when encountering invalid UTF-8 sequences.
-     * If false (default), replace invalid sequences with U+FFFD (replacement character).
-     * @default false
-     */
-    fatal?: boolean;
-}
-
-// #endregion
-
 // #region Internal Variables
 
+/**
+ * UTF-8 BOM (Byte Order Mark): U+FEFF
+ */
+const BOM = '\ufeff';
+
+// Cached TextEncoder instance
 const encoder = Lazy(() => new TextEncoder());
-// Non-fatal decoder (default): replaces invalid sequences with U+FFFD
-const decoder = Lazy(() => new TextDecoder('utf-8', { fatal: false }));
-// Fatal decoder: throws on invalid sequences
-const fatalDecoder = Lazy(() => new TextDecoder('utf-8', { fatal: true }));
+
+// Cached TextDecoder instances for all combinations of fatal × ignoreBOM
+const decoder = Lazy(() => new TextDecoder('utf-8', { fatal: false, ignoreBOM: false }));
+const decoderIgnoreBOM = Lazy(() => new TextDecoder('utf-8', { fatal: false, ignoreBOM: true }));
+const fatalDecoder = Lazy(() => new TextDecoder('utf-8', { fatal: true, ignoreBOM: false }));
+const fatalDecoderIgnoreBOM = Lazy(() => new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }));
 
 // #endregion
 
@@ -54,8 +46,9 @@ export function encodeUtf8(data: string): Uint8Array<ArrayBuffer> {
  * Decodes binary data to string (UTF-8 decoding).
  *
  * @param data - The binary data to decode.
- * @param options - Decoding options.
+ * @param options - Decoding options (same as TextDecoderOptions).
  * @param options.fatal - If true, throw on invalid sequences. If false (default), replace with U+FFFD.
+ * @param options.ignoreBOM - If true, keep BOM in output. If false (default), strip BOM.
  * @returns Decoded string.
  * @since 1.0.0
  * @example
@@ -69,15 +62,28 @@ export function encodeUtf8(data: string): Uint8Array<ArrayBuffer> {
  *
  * // With invalid bytes (fatal)
  * decodeUtf8(new Uint8Array([0xff, 0xfe]), { fatal: true }); // throws Error
+ *
+ * // BOM handling (default: strip BOM)
+ * const withBOM = new Uint8Array([0xef, 0xbb, 0xbf, 0x48, 0x69]); // BOM + 'Hi'
+ * decodeUtf8(withBOM); // 'Hi'
+ * decodeUtf8(withBOM, { ignoreBOM: true }); // '\uFEFFHi'
  * ```
  */
-export function decodeUtf8(data: BufferSource, options?: DecodeUtf8Options): string {
-    const fatal = options?.fatal ?? false;
+export function decodeUtf8(data: BufferSource, options?: TextDecoderOptions): string {
+    const {
+        fatal = false,
+        ignoreBOM = false,
+    } = options ?? {};
 
     // Compatible with environments that may not have `TextDecoder`
-    return typeof TextDecoder === 'function'
-        ? (fatal ? fatalDecoder : decoder).force().decode(data)
-        : decodeUtf8Fallback(data, fatal);
+    if (typeof TextDecoder === 'function') {
+        const decoderInstance = fatal
+            ? (ignoreBOM ? fatalDecoderIgnoreBOM : fatalDecoder)
+            : (ignoreBOM ? decoderIgnoreBOM : decoder);
+        return decoderInstance.force().decode(data);
+    }
+
+    return decodeUtf8Fallback(data, fatal, ignoreBOM);
 }
 
 // #region Pure JS Implementation
@@ -127,9 +133,10 @@ function encodeUtf8Fallback(data: string): Uint8Array<ArrayBuffer> {
  *
  * @param data - The BufferSource to decode.
  * @param fatal - If true, throw on invalid sequences. If false, replace with U+FFFD.
+ * @param ignoreBOM - If true, keep BOM in output. If false, strip BOM.
  * @returns Decoded string.
  */
-function decodeUtf8Fallback(data: BufferSource, fatal: boolean): string {
+function decodeUtf8Fallback(data: BufferSource, fatal: boolean, ignoreBOM: boolean): string {
     const bytes = bufferSourceToBytes(data);
     const { length } = bytes;
 
@@ -209,6 +216,11 @@ function decodeUtf8Fallback(data: BufferSource, fatal: boolean): string {
 
         str += String.fromCodePoint(codePoint);
         i += 1 + bytesNeeded;
+    }
+
+    // Strip BOM if not ignored and present at the beginning
+    if (!ignoreBOM && str.startsWith(BOM)) {
+        return str.slice(1);
     }
 
     return str;

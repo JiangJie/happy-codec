@@ -72,6 +72,10 @@ const text = decodeUtf8(utf8Bytes); // '你好'
 const lossy = decodeUtf8(new Uint8Array([0xff, 0xfe])); // '��'
 // Use { fatal: true } to throw on invalid bytes
 decodeUtf8(new Uint8Array([0xff]), { fatal: true }); // throws TypeError
+// BOM is stripped by default, use { ignoreBOM: true } to keep it
+const withBOM = new Uint8Array([0xef, 0xbb, 0xbf, 0x48, 0x69]); // BOM + 'Hi'
+decodeUtf8(withBOM); // 'Hi'
+decodeUtf8(withBOM, { ignoreBOM: true }); // '\uFEFFHi'
 
 // ByteString
 const byteStr = encodeByteString(new Uint8Array([72, 101, 108, 108, 111])); // 'Hello'

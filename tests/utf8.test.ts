@@ -1,6 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import { decodeUtf8, encodeUtf8 } from '../src/mod.ts';
-import type { DecodeUtf8Options } from '../src/mod.ts';
 
 test('encode/decode between utf8 string and binary', () => {
     const data = 'happy-codec';
@@ -33,9 +32,36 @@ test('decodeUtf8 throws on invalid bytes when fatal is true', () => {
     expect(() => decodeUtf8(buffer, { fatal: true })).toThrow();
 });
 
+test('decodeUtf8 strips BOM by default', () => {
+    // UTF-8 BOM: EF BB BF + 'Hi'
+    const withBOM = new Uint8Array([0xef, 0xbb, 0xbf, 0x48, 0x69]);
+    expect(decodeUtf8(withBOM)).toBe('Hi');
+});
+
+test('decodeUtf8 keeps BOM when ignoreBOM is true', () => {
+    const withBOM = new Uint8Array([0xef, 0xbb, 0xbf, 0x48, 0x69]);
+    expect(decodeUtf8(withBOM, { ignoreBOM: true })).toBe('\ufeffHi');
+});
+
+test('decodeUtf8 handles data without BOM correctly', () => {
+    const noBOM = new Uint8Array([0x48, 0x69]);
+    expect(decodeUtf8(noBOM)).toBe('Hi');
+    expect(decodeUtf8(noBOM, { ignoreBOM: true })).toBe('Hi');
+});
+
+test('decodeUtf8 with fatal and ignoreBOM combination', () => {
+    // Valid data with BOM
+    const withBOM = new Uint8Array([0xef, 0xbb, 0xbf, 0x48, 0x69]);
+    expect(decodeUtf8(withBOM, { fatal: true, ignoreBOM: true })).toBe('\ufeffHi');
+
+    // Invalid data should throw
+    const invalid = new Uint8Array([0xff]);
+    expect(() => decodeUtf8(invalid, { fatal: true, ignoreBOM: true })).toThrow();
+});
+
 describe('UTF-8 fallback implementation', () => {
     let encodeUtf8Fallback: (data: string) => Uint8Array<ArrayBuffer>;
-    let decodeUtf8Fallback: (data: BufferSource, options?: DecodeUtf8Options) => string;
+    let decodeUtf8Fallback: (data: BufferSource, options?: TextDecoderOptions) => string;
     let originalTextEncoder: typeof TextEncoder;
     let originalTextDecoder: typeof TextDecoder;
 
@@ -216,5 +242,22 @@ describe('UTF-8 fallback implementation', () => {
             const decoded = decodeUtf8Fallback(encoded);
             expect(decoded).toBe(original);
         }
+    });
+
+    test('decodeUtf8 strips BOM by default without TextDecoder', () => {
+        // UTF-8 BOM: EF BB BF + 'Hi'
+        const withBOM = new Uint8Array([0xef, 0xbb, 0xbf, 0x48, 0x69]).buffer;
+        expect(decodeUtf8Fallback(withBOM)).toBe('Hi');
+    });
+
+    test('decodeUtf8 keeps BOM when ignoreBOM is true without TextDecoder', () => {
+        const withBOM = new Uint8Array([0xef, 0xbb, 0xbf, 0x48, 0x69]).buffer;
+        expect(decodeUtf8Fallback(withBOM, { ignoreBOM: true })).toBe('\ufeffHi');
+    });
+
+    test('decodeUtf8 handles data without BOM correctly without TextDecoder', () => {
+        const noBOM = new Uint8Array([0x48, 0x69]).buffer;
+        expect(decodeUtf8Fallback(noBOM)).toBe('Hi');
+        expect(decodeUtf8Fallback(noBOM, { ignoreBOM: true })).toBe('Hi');
     });
 });

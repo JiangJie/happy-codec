@@ -19,6 +19,7 @@ Zero-dependency codec library for Base64, Hex, UTF-8 and ByteString encoding/dec
 ## Features
 
 - **Zero dependencies** - No external runtime dependencies
+- **Universal runtime** - Works in any JavaScript environment (Browser, Node.js, Deno, Bun, Web Workers, 小程序/小游戏 (如微信小游戏), etc.) regardless of DOM/BOM support
 - **Base64** - Fast pure-JS encoding (faster than native `btoa`), native decoding with fallback
 - **Hex** - Hexadecimal encoding/decoding
 - **UTF-8** - UTF-8 text encoding/decoding with fallback support

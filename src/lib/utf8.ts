@@ -144,63 +144,67 @@ function decodeUtf8Fallback(data: BufferSource, fatal: boolean, ignoreBOM: boole
     let i = 0;
 
     /**
-     * Handle invalid byte sequence: throw if fatal, otherwise append replacement character and advance index.
+     * Handle invalid byte sequence: throw if fatal, otherwise append replacement character.
      */
     function handleInvalid(): void {
         if (fatal) {
             throw new TypeError('The encoded data was not valid for encoding utf-8');
         }
         str += '\ufffd';
-        i += 1;
     }
 
     while (i < length) {
         const byte1 = bytes[i];
 
-        let codePoint: number;
-        let bytesNeeded: number;
-        let lowerBoundary = 0x80;
-        let upperBoundary = 0xbf;
-
+        // 1-byte character (ASCII: 0x00-0x7F)
         if (byte1 < 0x80) {
-            // 1-byte character (ASCII)
             str += String.fromCodePoint(byte1);
             i += 1;
             continue;
-        } else if (byte1 >= 0xc2 && byte1 < 0xe0) {
+        }
+
+        // Determine bytes needed and validate leading byte
+        let bytesNeeded: number;
+        let codePoint: number;
+        let lowerBoundary = 0x80;
+        let upperBoundary = 0xbf;
+
+        if (byte1 >= 0xc2 && byte1 < 0xe0) {
             // 2-byte character
-            bytesNeeded = 1;
+            bytesNeeded = 2;
             codePoint = byte1 & 0x1f;
         } else if (byte1 >= 0xe0 && byte1 < 0xf0) {
             // 3-byte character
-            bytesNeeded = 2;
+            bytesNeeded = 3;
             codePoint = byte1 & 0x0f;
             if (byte1 === 0xe0) lowerBoundary = 0xa0;
             if (byte1 === 0xed) upperBoundary = 0x9f;
         } else if (byte1 >= 0xf0 && byte1 < 0xf5) {
             // 4-byte character
-            bytesNeeded = 3;
+            bytesNeeded = 4;
             codePoint = byte1 & 0x07;
             if (byte1 === 0xf0) lowerBoundary = 0x90;
             if (byte1 === 0xf4) upperBoundary = 0x8f;
         } else {
-            // Invalid leading byte
+            // Invalid leading byte (0x80-0xC1, 0xF5-0xFF)
             handleInvalid();
+            i += 1;
             continue;
         }
 
-        // Check if we have enough bytes
-        if (i + bytesNeeded >= length) {
+        // Check if we have enough bytes for the complete sequence
+        if (i + bytesNeeded > length) {
+            // Truncated sequence: output one replacement char for entire remaining bytes
             handleInvalid();
-            continue;
+            break;
         }
 
-        // Process continuation bytes
+        // Validate and decode continuation bytes
         let valid = true;
-        for (let j = 0; j < bytesNeeded; j++) {
-            const byte = bytes[i + 1 + j];
-            const lower = j === 0 ? lowerBoundary : 0x80;
-            const upper = j === 0 ? upperBoundary : 0xbf;
+        for (let j = 1; j < bytesNeeded; j++) {
+            const byte = bytes[i + j];
+            const lower = j === 1 ? lowerBoundary : 0x80;
+            const upper = j === 1 ? upperBoundary : 0xbf;
 
             if (byte < lower || byte > upper) {
                 valid = false;
@@ -210,12 +214,14 @@ function decodeUtf8Fallback(data: BufferSource, fatal: boolean, ignoreBOM: boole
         }
 
         if (!valid) {
+            // Invalid continuation byte: output replacement and advance by 1
             handleInvalid();
+            i += 1;
             continue;
         }
 
         str += String.fromCodePoint(codePoint);
-        i += 1 + bytesNeeded;
+        i += bytesNeeded;
     }
 
     // Strip BOM if not ignored and present at the beginning

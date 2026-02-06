@@ -1,6 +1,13 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import { decodeUtf8, encodeUtf8 } from '../src/mod.ts';
 
+// Native TextEncoder/TextDecoder for comparison
+const nativeEncoder = new TextEncoder();
+const nativeDecoder = new TextDecoder('utf-8', { fatal: false, ignoreBOM: false });
+const nativeDecoderIgnoreBOM = new TextDecoder('utf-8', { fatal: false, ignoreBOM: true });
+const nativeFatalDecoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: false });
+const nativeFatalDecoderIgnoreBOM = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
+
 test('encode/decode between utf8 string and binary', () => {
     const data = 'happy-codec';
     expect(decodeUtf8(encodeUtf8(data))).toBe(data);
@@ -177,8 +184,9 @@ describe('UTF-8 fallback implementation', () => {
 
     test('decodeUtf8 handles truncated multi-byte sequence without TextDecoder', () => {
         // 0xE4 starts a 3-byte sequence but only 1 continuation byte follows
+        // TextDecoder outputs one replacement character for the entire truncated sequence
         const buffer = new Uint8Array([0xe4, 0xb8]).buffer;
-        expect(decodeUtf8Fallback(buffer)).toBe('\ufffd\ufffd');
+        expect(decodeUtf8Fallback(buffer)).toBe('\ufffd');
     });
 
     test('decodeUtf8 throws on truncated multi-byte sequence when fatal is true without TextDecoder', () => {
@@ -259,5 +267,77 @@ describe('UTF-8 fallback implementation', () => {
         const noBOM = new Uint8Array([0x48, 0x69]).buffer;
         expect(decodeUtf8Fallback(noBOM)).toBe('Hi');
         expect(decodeUtf8Fallback(noBOM, { ignoreBOM: true })).toBe('Hi');
+    });
+
+    test('fallback encodeUtf8 matches native TextEncoder', () => {
+        const testCases = [
+            '',
+            'Hello',
+            'é',
+            '中文',
+            '😀🎮',
+            'Mixed: Hello 你好 🌍 café',
+            '\t\n\r',
+            '\x00\x7f', // ASCII boundaries
+            '\u0080\u07ff', // 2-byte boundaries
+            '\u0800\uffff', // 3-byte boundaries
+            '\u{10000}\u{10ffff}', // 4-byte boundaries
+        ];
+
+        for (const str of testCases) {
+            const fallbackResult = encodeUtf8Fallback(str);
+            const nativeResult = nativeEncoder.encode(str);
+            expect(new Uint8Array(fallbackResult)).toEqual(nativeResult);
+        }
+    });
+
+    test('fallback decodeUtf8 matches native TextDecoder for valid data', () => {
+        const testCases = [
+            new Uint8Array([]),
+            new Uint8Array([0x48, 0x65, 0x6c, 0x6c, 0x6f]), // Hello
+            new Uint8Array([0xc3, 0xa9]), // é
+            new Uint8Array([0xe4, 0xb8, 0xad, 0xe6, 0x96, 0x87]), // 中文
+            new Uint8Array([0xf0, 0x9f, 0x98, 0x80]), // 😀
+            new Uint8Array([0xef, 0xbb, 0xbf, 0x48, 0x69]), // BOM + Hi
+        ];
+
+        for (const bytes of testCases) {
+            // Test all option combinations
+            expect(decodeUtf8Fallback(bytes)).toBe(nativeDecoder.decode(bytes));
+            expect(decodeUtf8Fallback(bytes, { ignoreBOM: true })).toBe(nativeDecoderIgnoreBOM.decode(bytes));
+            expect(decodeUtf8Fallback(bytes, { fatal: true })).toBe(nativeFatalDecoder.decode(bytes));
+            expect(decodeUtf8Fallback(bytes, { fatal: true, ignoreBOM: true })).toBe(nativeFatalDecoderIgnoreBOM.decode(bytes));
+        }
+    });
+
+    test('fallback decodeUtf8 matches native TextDecoder for invalid data (non-fatal)', () => {
+        const testCases = [
+            new Uint8Array([0xff]), // Invalid byte
+            new Uint8Array([0xc3]), // Truncated 2-byte
+            new Uint8Array([0xe4, 0xb8]), // Truncated 3-byte
+            new Uint8Array([0xf0, 0x9f, 0x98]), // Truncated 4-byte
+            new Uint8Array([0xc3, 0x00]), // Invalid continuation
+            new Uint8Array([0xe0, 0x80, 0x80]), // Overlong
+            new Uint8Array([0xed, 0xa0, 0x80]), // Surrogate
+        ];
+
+        for (const bytes of testCases) {
+            expect(decodeUtf8Fallback(bytes)).toBe(nativeDecoder.decode(bytes));
+            expect(decodeUtf8Fallback(bytes, { ignoreBOM: true })).toBe(nativeDecoderIgnoreBOM.decode(bytes));
+        }
+    });
+
+    test('fallback decodeUtf8 throws like native TextDecoder for invalid data (fatal)', () => {
+        const testCases = [
+            new Uint8Array([0xff]),
+            new Uint8Array([0xc3]),
+            new Uint8Array([0xe0, 0x80, 0x80]),
+        ];
+
+        for (const bytes of testCases) {
+            // Both should throw
+            expect(() => decodeUtf8Fallback(bytes, { fatal: true })).toThrow();
+            expect(() => nativeFatalDecoder.decode(bytes)).toThrow();
+        }
     });
 });

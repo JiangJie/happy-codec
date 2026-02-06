@@ -1,20 +1,32 @@
 /**
  * Base64 encoding/decoding module.
  *
- * ## Why use pure JS implementation?
+ * ## Implementation Strategy
  *
- * Although browsers/nodejs provide native btoa/atob methods, they have the following issues:
+ * **Encoding (`encodeBase64`)**: Uses pure JS implementation because:
+ * - Native `btoa` only handles Latin1 characters (0x00-0xFF)
+ * - Processing UTF-8 data requires additional `string → UTF-8 bytes → Latin1 string → btoa` conversion
+ * - Benchmark shows pure JS is 1.8x ~ 5x faster than btoa with conversion
  *
- * 1. **Latin1 limitation**: btoa/atob can only handle Latin1 characters (0x00-0xFF),
- *    processing UTF-8 data requires additional string ↔ bytes conversion
+ * **Decoding (`decodeBase64`)**: Uses native `atob` when available because:
+ * - Benchmark shows `atob` is 1.3x ~ 1.8x faster for medium/long data
+ * - Falls back to pure JS implementation when `atob` is not available
  *
- * 2. **Performance issues**: Due to the extra conversion steps, the native solution is actually slower:
- *    - Encoding: `string → UTF-8 bytes → Latin1 string → btoa`
- *    - Decoding: `atob → Latin1 string → bytes`
+ * ## Benchmark Results
  *
- * 3. **Benchmark results**: Pure JS implementation is faster than the native solution in all scenarios:
- *    - Encoding: Pure JS is 1.6x ~ 4.1x faster than btoa
- *    - Decoding: Pure JS is 1.1x ~ 2.5x faster than atob
+ * ### Encoding (pure JS vs btoa + conversion)
+ * | Data Size | Pure JS Performance |
+ * |-----------|---------------------|
+ * | Short     | 1.8x faster         |
+ * | Medium    | 3.8x faster         |
+ * | Long      | 5.1x faster         |
+ *
+ * ### Decoding (atob vs pure JS fallback)
+ * | Data Size | atob Performance    |
+ * |-----------|---------------------|
+ * | Short     | ~1x (similar)       |
+ * | Medium    | 1.5x faster         |
+ * | Long      | 1.8x faster         |
  *
  * Derived from @std/encoding/base64 and https://github.com/cross-org/base64
  *
@@ -107,7 +119,8 @@ export function encodeBase64(data: DataSource): string {
 /**
  * Converts a Base64 encoded string to Uint8Array.
  *
- * Uses pure JS implementation on all platforms, benchmark shows it's faster than atob + string conversion.
+ * Uses native `atob` when available for better performance on medium/long data,
+ * falls back to pure JS implementation when `atob` is not available.
  *
  * @param data - Base64 encoded string.
  * @returns Decoded Uint8Array.
@@ -123,6 +136,41 @@ export function encodeBase64(data: DataSource): string {
  * ```
  */
 export function decodeBase64(data: string): Uint8Array<ArrayBuffer> {
+    // Use native atob when available for better performance
+    return typeof atob === 'function'
+        ? decodeBase64Native(data)
+        : decodeBase64Fallback(data);
+}
+
+// #region Internal Functions
+
+/**
+ * Native implementation using atob.
+ * Converts atob's Latin1 string result to Uint8Array.
+ *
+ * @param data - Base64 encoded string.
+ * @returns Decoded Uint8Array.
+ */
+function decodeBase64Native(data: string): Uint8Array<ArrayBuffer> {
+    const latin1 = atob(data);
+    const { length } = latin1;
+    const bytes = new Uint8Array(length);
+
+    for (let i = 0; i < length; i++) {
+        bytes[i] = latin1.charCodeAt(i);
+    }
+
+    return bytes;
+}
+
+/**
+ * Pure JS fallback implementation.
+ * Used when atob is not available.
+ *
+ * @param data - Base64 encoded string.
+ * @returns Decoded Uint8Array.
+ */
+function decodeBase64Fallback(data: string): Uint8Array<ArrayBuffer> {
     const { length } = data;
 
     let byteLength = length * 0.75;
@@ -151,3 +199,5 @@ export function decodeBase64(data: string): Uint8Array<ArrayBuffer> {
 
     return bytes;
 }
+
+// #endregion

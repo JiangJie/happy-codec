@@ -2,12 +2,21 @@
  * Base64 encoding/decoding benchmark.
  * Compares happy-codec implementation with native btoa/atob.
  *
- * Note: btoa/atob only support Latin1 characters, so for non-Latin1 strings
- * we need to use encodeUtf8/decodeUtf8 for conversion to ensure fair comparison.
+ * Note: For decodeBase64, we need to remove atob before importing the module
+ * to force the use of fallback implementation, similar to utf8.bench.ts.
  */
 
 import { bench, describe } from 'vitest';
-import { decodeBase64, decodeUtf8, encodeBase64, encodeUtf8 } from '../src/mod.ts';
+
+// Save native implementations for comparison
+const nativeAtob = globalThis.atob;
+
+// Remove atob to force fallback for decodeBase64
+// @ts-expect-error Intentionally removing for benchmark
+globalThis.atob = undefined;
+
+// Import after removing atob to get fallback for decodeBase64
+const { decodeBase64, decodeUtf8, encodeBase64, encodeUtf8 } = await import('../src/mod.ts');
 
 // Test data - using non-Latin1 strings (Chinese and emoji)
 const shortString = 'Hello, 世界!';
@@ -51,14 +60,14 @@ function nativeEncodeBase64(str: string): string {
 
 // Native base64 decode for non-Latin1 strings: atob -> Latin1 string -> bytes -> UTF-8 string
 function nativeDecodeBase64ToString(base64: string): string {
-    const latin1 = atob(base64);
+    const latin1 = nativeAtob(base64);
     const bytes = latin1ToUint8Array(latin1);
     return decodeUtf8(bytes);
 }
 
 // Native base64 decode to bytes: atob -> Latin1 string -> bytes
 function nativeDecodeBase64ToBytes(base64: string): Uint8Array {
-    return latin1ToUint8Array(atob(base64));
+    return latin1ToUint8Array(nativeAtob(base64));
 }
 
 // ============================================================================
@@ -134,7 +143,7 @@ describe('Base64 Encode Bytes - Long', () => {
 // ============================================================================
 
 describe('Base64 Decode to String - Short (non-Latin1)', () => {
-    bench('happy-codec decodeBase64 + decodeUtf8', () => {
+    bench('happy-codec decodeBase64 (fallback) + decodeUtf8', () => {
         decodeUtf8(decodeBase64(shortBase64));
     });
 
@@ -144,7 +153,7 @@ describe('Base64 Decode to String - Short (non-Latin1)', () => {
 });
 
 describe('Base64 Decode to String - Medium (non-Latin1)', () => {
-    bench('happy-codec decodeBase64 + decodeUtf8', () => {
+    bench('happy-codec decodeBase64 (fallback) + decodeUtf8', () => {
         decodeUtf8(decodeBase64(mediumBase64));
     });
 
@@ -154,7 +163,7 @@ describe('Base64 Decode to String - Medium (non-Latin1)', () => {
 });
 
 describe('Base64 Decode to String - Long (non-Latin1)', () => {
-    bench('happy-codec decodeBase64 + decodeUtf8', () => {
+    bench('happy-codec decodeBase64 (fallback) + decodeUtf8', () => {
         decodeUtf8(decodeBase64(longBase64));
     });
 
@@ -168,7 +177,7 @@ describe('Base64 Decode to String - Long (non-Latin1)', () => {
 // ============================================================================
 
 describe('Base64 Decode to Bytes - Short', () => {
-    bench('happy-codec decodeBase64', () => {
+    bench('happy-codec decodeBase64 (fallback)', () => {
         decodeBase64(shortBinaryBase64);
     });
 
@@ -178,7 +187,7 @@ describe('Base64 Decode to Bytes - Short', () => {
 });
 
 describe('Base64 Decode to Bytes - Medium', () => {
-    bench('happy-codec decodeBase64', () => {
+    bench('happy-codec decodeBase64 (fallback)', () => {
         decodeBase64(mediumBinaryBase64);
     });
 
@@ -188,7 +197,7 @@ describe('Base64 Decode to Bytes - Medium', () => {
 });
 
 describe('Base64 Decode to Bytes - Long', () => {
-    bench('happy-codec decodeBase64', () => {
+    bench('happy-codec decodeBase64 (fallback)', () => {
         decodeBase64(longBinaryBase64);
     });
 

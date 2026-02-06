@@ -151,7 +151,7 @@ function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): st
         if (fatal) {
             throw new TypeError('The encoded data was not valid for encoding utf-8');
         }
-        str += '\ufffd';
+        str += String.fromCharCode(0xfffd);
     }
 
     while (i < length) {

@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import { decodeUtf8, encodeUtf8 } from '../src/mod.ts';
+import type { DecodeUtf8Options } from '../src/mod.ts';
 
 test('encode/decode between utf8 string and binary', () => {
     const data = 'happy-codec';
@@ -21,9 +22,20 @@ test('encodeUtf8 returns Uint8Array', () => {
     expect(result).toBeInstanceOf(Uint8Array);
 });
 
+test('decodeUtf8 replaces invalid bytes with U+FFFD by default', () => {
+    // 0xFF is invalid UTF-8 byte
+    const buffer = new Uint8Array([0xff, 0xfe]);
+    expect(decodeUtf8(buffer)).toBe('\ufffd\ufffd');
+});
+
+test('decodeUtf8 throws on invalid bytes when fatal is true', () => {
+    const buffer = new Uint8Array([0xff, 0xfe]);
+    expect(() => decodeUtf8(buffer, { fatal: true })).toThrow();
+});
+
 describe('UTF-8 fallback implementation', () => {
     let encodeUtf8Fallback: (data: string) => Uint8Array<ArrayBuffer>;
-    let decodeUtf8Fallback: (data: BufferSource) => string;
+    let decodeUtf8Fallback: (data: BufferSource, options?: DecodeUtf8Options) => string;
     let originalTextEncoder: typeof TextEncoder;
     let originalTextDecoder: typeof TextDecoder;
 
@@ -126,10 +138,67 @@ describe('UTF-8 fallback implementation', () => {
         expect(decodeUtf8Fallback(buffer)).toBe('A中😀');
     });
 
-    test('decodeUtf8 throws on invalid UTF-8 byte sequence without TextDecoder', () => {
+    test('decodeUtf8 replaces invalid UTF-8 byte sequence with U+FFFD without TextDecoder', () => {
         // 0xF8 is invalid UTF-8 start byte (5-byte sequence, not valid in UTF-8)
         const buffer = new Uint8Array([0xf8, 0x80, 0x80, 0x80]).buffer;
-        expect(() => decodeUtf8Fallback(buffer)).toThrow('Invalid UTF-8 byte sequence');
+        expect(decodeUtf8Fallback(buffer)).toBe('\ufffd\ufffd\ufffd\ufffd');
+    });
+
+    test('decodeUtf8 throws on invalid UTF-8 byte sequence when fatal is true without TextDecoder', () => {
+        const buffer = new Uint8Array([0xf8, 0x80, 0x80, 0x80]).buffer;
+        expect(() => decodeUtf8Fallback(buffer, { fatal: true })).toThrow('Invalid UTF-8 byte sequence');
+    });
+
+    test('decodeUtf8 handles truncated multi-byte sequence without TextDecoder', () => {
+        // 0xE4 starts a 3-byte sequence but only 1 continuation byte follows
+        const buffer = new Uint8Array([0xe4, 0xb8]).buffer;
+        expect(decodeUtf8Fallback(buffer)).toBe('\ufffd\ufffd');
+    });
+
+    test('decodeUtf8 throws on truncated multi-byte sequence when fatal is true without TextDecoder', () => {
+        // 0xF0 starts a 4-byte sequence but only 2 continuation bytes follow
+        const buffer = new Uint8Array([0xf0, 0x9f, 0x98]).buffer;
+        expect(() => decodeUtf8Fallback(buffer, { fatal: true })).toThrow('Invalid UTF-8 byte sequence');
+    });
+
+    test('decodeUtf8 handles invalid continuation byte without TextDecoder', () => {
+        // 0xE4 starts a 3-byte sequence, but 0x00 is not a valid continuation byte (should be 0x80-0xBF)
+        const buffer = new Uint8Array([0xe4, 0x00, 0xad]).buffer;
+        expect(decodeUtf8Fallback(buffer)).toBe('\ufffd\x00\ufffd');
+    });
+
+    test('decodeUtf8 throws on invalid continuation byte when fatal is true without TextDecoder', () => {
+        // 0xC3 starts a 2-byte sequence, but 0xFF is not a valid continuation byte
+        const buffer = new Uint8Array([0xc3, 0xff]).buffer;
+        expect(() => decodeUtf8Fallback(buffer, { fatal: true })).toThrow('Invalid UTF-8 byte sequence');
+    });
+
+    test('decodeUtf8 handles overlong 3-byte sequence (0xE0) without TextDecoder', () => {
+        // 0xE0 requires second byte >= 0xA0 to avoid overlong encoding
+        // 0xE0 0x80 0x80 would encode U+0000 which should be 1 byte
+        const buffer = new Uint8Array([0xe0, 0x80, 0x80]).buffer;
+        expect(decodeUtf8Fallback(buffer)).toBe('\ufffd\ufffd\ufffd');
+    });
+
+    test('decodeUtf8 handles surrogate range (0xED) without TextDecoder', () => {
+        // 0xED requires second byte <= 0x9F to avoid surrogate pairs (U+D800-U+DFFF)
+        // 0xED 0xA0 0x80 would encode U+D800 which is invalid
+        const buffer = new Uint8Array([0xed, 0xa0, 0x80]).buffer;
+        expect(decodeUtf8Fallback(buffer)).toBe('\ufffd\ufffd\ufffd');
+    });
+
+    test('decodeUtf8 handles overlong 4-byte sequence (0xF0) without TextDecoder', () => {
+        // 0xF0 requires second byte >= 0x90 to avoid overlong encoding
+        // 0xF0 0x80 0x80 0x80 would encode U+0000 which should be 1 byte
+        const buffer = new Uint8Array([0xf0, 0x80, 0x80, 0x80]).buffer;
+        expect(decodeUtf8Fallback(buffer)).toBe('\ufffd\ufffd\ufffd\ufffd');
+    });
+
+    test('decodeUtf8 handles out of range 4-byte sequence (0xF4) without TextDecoder', () => {
+        // 0xF4 requires second byte <= 0x8F to stay within U+10FFFF
+        // 0xF4 0x90 0x80 0x80 would encode U+110000 which is out of Unicode range
+        const buffer = new Uint8Array([0xf4, 0x90, 0x80, 0x80]).buffer;
+        expect(decodeUtf8Fallback(buffer)).toBe('\ufffd\ufffd\ufffd\ufffd');
     });
 
     test('encodeUtf8 and decodeUtf8 round-trip without TextEncoder/TextDecoder', () => {

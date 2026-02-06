@@ -68,6 +68,10 @@ const data = decodeHex('ff0080'); // Uint8Array [255, 0, 128]
 // UTF-8
 const utf8Bytes = encodeUtf8('你好'); // Uint8Array [228, 189, 160, ...]
 const text = decodeUtf8(utf8Bytes); // '你好'
+// Invalid bytes are replaced with U+FFFD by default
+const lossy = decodeUtf8(new Uint8Array([0xff, 0xfe])); // '��'
+// Use { fatal: true } to throw on invalid bytes
+decodeUtf8(new Uint8Array([0xff]), { fatal: true }); // throws TypeError
 
 // ByteString
 const byteStr = encodeByteString(new Uint8Array([72, 101, 108, 108, 111])); // 'Hello'

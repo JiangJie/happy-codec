@@ -5,11 +5,29 @@
 
 import { bufferSourceToBytes, Lazy } from '../internal/mod.ts';
 
+// #region Types
+
+/**
+ * Options for UTF-8 decoding.
+ */
+export interface DecodeUtf8Options {
+    /**
+     * If true, throw an error when encountering invalid UTF-8 sequences.
+     * If false (default), replace invalid sequences with U+FFFD (replacement character).
+     * @default false
+     */
+    fatal?: boolean;
+}
+
+// #endregion
+
 // #region Internal Variables
 
 const encoder = Lazy(() => new TextEncoder());
-// Throw error on invalid data
-const decoder = Lazy(() => new TextDecoder('utf-8', { fatal: true }));
+// Non-fatal decoder (default): replaces invalid sequences with U+FFFD
+const decoder = Lazy(() => new TextDecoder('utf-8', { fatal: false }));
+// Fatal decoder: throws on invalid sequences
+const fatalDecoder = Lazy(() => new TextDecoder('utf-8', { fatal: true }));
 
 // #endregion
 
@@ -36,19 +54,30 @@ export function encodeUtf8(data: string): Uint8Array<ArrayBuffer> {
  * Decodes binary data to string (UTF-8 decoding).
  *
  * @param data - The binary data to decode.
+ * @param options - Decoding options.
+ * @param options.fatal - If true, throw on invalid sequences. If false (default), replace with U+FFFD.
  * @returns Decoded string.
  * @since 1.0.0
  * @example
  * ```ts
  * const decoded = decodeUtf8(new Uint8Array([228, 189, 160, 229, 165, 189]));
  * console.log(decoded); // '你好'
+ *
+ * // With invalid bytes (non-fatal, default)
+ * const withReplacement = decodeUtf8(new Uint8Array([0xff, 0xfe]));
+ * console.log(withReplacement); // '��'
+ *
+ * // With invalid bytes (fatal)
+ * decodeUtf8(new Uint8Array([0xff, 0xfe]), { fatal: true }); // throws Error
  * ```
  */
-export function decodeUtf8(data: BufferSource): string {
+export function decodeUtf8(data: BufferSource, options?: DecodeUtf8Options): string {
+    const fatal = options?.fatal ?? false;
+
     // Compatible with environments that may not have `TextDecoder`
     return typeof TextDecoder === 'function'
-        ? decoder.force().decode(data)
-        : decodeUtf8Fallback(data);
+        ? (fatal ? fatalDecoder : decoder).force().decode(data)
+        : decodeUtf8Fallback(data, fatal);
 }
 
 // #region Pure JS Implementation
@@ -97,48 +126,89 @@ function encodeUtf8Fallback(data: string): Uint8Array<ArrayBuffer> {
  * Used when the platform does not support TextDecoder.
  *
  * @param data - The BufferSource to decode.
+ * @param fatal - If true, throw on invalid sequences. If false, replace with U+FFFD.
  * @returns Decoded string.
  */
-function decodeUtf8Fallback(data: BufferSource): string {
+function decodeUtf8Fallback(data: BufferSource, fatal: boolean): string {
     const bytes = bufferSourceToBytes(data);
+    const { length } = bytes;
 
     let str = '';
     let i = 0;
 
-    while (i < bytes.length) {
+    /**
+     * Handle invalid byte sequence: throw if fatal, otherwise append replacement character and advance index.
+     */
+    function handleInvalid(): void {
+        if (fatal) {
+            throw new TypeError('Invalid UTF-8 byte sequence');
+        }
+        str += '\ufffd';
+        i += 1;
+    }
+
+    while (i < length) {
         const byte1 = bytes[i];
 
         let codePoint: number;
+        let bytesNeeded: number;
+        let lowerBoundary = 0x80;
+        let upperBoundary = 0xbf;
 
         if (byte1 < 0x80) {
-            // 1-byte character
-            codePoint = byte1;
+            // 1-byte character (ASCII)
+            str += String.fromCodePoint(byte1);
             i += 1;
-        } else if (byte1 < 0xe0) {
+            continue;
+        } else if (byte1 >= 0xc2 && byte1 < 0xe0) {
             // 2-byte character
-            const byte2 = bytes[i + 1];
-            codePoint = ((byte1 & 0x1f) << 6) | (byte2 & 0x3f);
-            i += 2;
-        } else if (byte1 < 0xf0) {
+            bytesNeeded = 1;
+            codePoint = byte1 & 0x1f;
+        } else if (byte1 >= 0xe0 && byte1 < 0xf0) {
             // 3-byte character
-            const byte2 = bytes[i + 1];
-            const byte3 = bytes[i + 2];
-            codePoint = ((byte1 & 0x0f) << 12) | ((byte2 & 0x3f) << 6) | (byte3 & 0x3f);
-            i += 3;
-        } else if (byte1 < 0xf8) {
-            // 4-byte character (code point >= U+10000, such as emoji)
-            const byte2 = bytes[i + 1];
-            const byte3 = bytes[i + 2];
-            const byte4 = bytes[i + 3];
-            codePoint = ((byte1 & 0x07) << 18) | ((byte2 & 0x3f) << 12) | ((byte3 & 0x3f) << 6) | (byte4 & 0x3f);
-            i += 4;
+            bytesNeeded = 2;
+            codePoint = byte1 & 0x0f;
+            if (byte1 === 0xe0) lowerBoundary = 0xa0;
+            if (byte1 === 0xed) upperBoundary = 0x9f;
+        } else if (byte1 >= 0xf0 && byte1 < 0xf5) {
+            // 4-byte character
+            bytesNeeded = 3;
+            codePoint = byte1 & 0x07;
+            if (byte1 === 0xf0) lowerBoundary = 0x90;
+            if (byte1 === 0xf4) upperBoundary = 0x8f;
         } else {
-            // Invalid UTF-8 byte sequence
-            throw new Error('Invalid UTF-8 byte sequence');
+            // Invalid leading byte
+            handleInvalid();
+            continue;
         }
 
-        // Use fromCodePoint to correctly handle all Unicode code points (including >= U+10000)
+        // Check if we have enough bytes
+        if (i + bytesNeeded >= length) {
+            handleInvalid();
+            continue;
+        }
+
+        // Process continuation bytes
+        let valid = true;
+        for (let j = 0; j < bytesNeeded; j++) {
+            const byte = bytes[i + 1 + j];
+            const lower = j === 0 ? lowerBoundary : 0x80;
+            const upper = j === 0 ? upperBoundary : 0xbf;
+
+            if (byte < lower || byte > upper) {
+                valid = false;
+                break;
+            }
+            codePoint = (codePoint << 6) | (byte & 0x3f);
+        }
+
+        if (!valid) {
+            handleInvalid();
+            continue;
+        }
+
         str += String.fromCodePoint(codePoint);
+        i += 1 + bytesNeeded;
     }
 
     return str;

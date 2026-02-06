@@ -29,7 +29,7 @@ export function encodeUtf8(data: string): Uint8Array<ArrayBuffer> {
     // Compatible with environments that may not have `TextEncoder`
     return typeof TextEncoder === 'function'
         ? encoder.force().encode(data)
-        : encodeUtf8Buffer(data);
+        : encodeUtf8Fallback(data);
 }
 
 /**
@@ -48,7 +48,7 @@ export function decodeUtf8(data: BufferSource): string {
     // Compatible with environments that may not have `TextDecoder`
     return typeof TextDecoder === 'function'
         ? decoder.force().decode(data)
-        : decodeUtf8Buffer(data);
+        : decodeUtf8Fallback(data);
 }
 
 // #region Pure JS Implementation
@@ -60,7 +60,7 @@ export function decodeUtf8(data: BufferSource): string {
  * @param data - The string to encode.
  * @returns Encoded Uint8Array.
  */
-function encodeUtf8Buffer(data: string): Uint8Array<ArrayBuffer> {
+function encodeUtf8Fallback(data: string): Uint8Array<ArrayBuffer> {
     const bytes: number[] = [];
 
     for (let i = 0; i < data.length; i++) {
@@ -99,7 +99,7 @@ function encodeUtf8Buffer(data: string): Uint8Array<ArrayBuffer> {
  * @param data - The BufferSource to decode.
  * @returns Decoded string.
  */
-function decodeUtf8Buffer(data: BufferSource): string {
+function decodeUtf8Fallback(data: BufferSource): string {
     const bytes = bufferSourceToBytes(data);
 
     let str = '';

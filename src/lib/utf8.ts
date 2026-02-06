@@ -83,7 +83,7 @@ export function decodeUtf8(data: BufferSource, options?: TextDecoderOptions): st
         return decoderInstance.force().decode(data);
     }
 
-    return decodeUtf8Fallback(data, fatal, ignoreBOM);
+    return decodeUtf8Fallback(data, { fatal, ignoreBOM });
 }
 
 // #region Pure JS Implementation
@@ -132,11 +132,12 @@ function encodeUtf8Fallback(data: string): Uint8Array<ArrayBuffer> {
  * Used when the platform does not support TextDecoder.
  *
  * @param data - The BufferSource to decode.
- * @param fatal - If true, throw on invalid sequences. If false, replace with U+FFFD.
- * @param ignoreBOM - If true, keep BOM in output. If false, strip BOM.
+ * @param options - Decoding options (same as TextDecoderOptions).
  * @returns Decoded string.
  */
-function decodeUtf8Fallback(data: BufferSource, fatal: boolean, ignoreBOM: boolean): string {
+function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): string {
+    const { fatal, ignoreBOM } = options;
+
     const bytes = bufferSourceToBytes(data);
     const { length } = bytes;
 

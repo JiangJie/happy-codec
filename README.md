@@ -79,9 +79,9 @@ const byteArr = decodeByteString('Hello'); // Uint8Array [72, 101, 108, 108, 111
 The native `btoa`/`atob` functions have limitations:
 
 1. **Latin1 restriction** - Only handles characters 0x00-0xFF
-2. **Performance overhead** - Requires extra string↔bytes conversions
+2. **Performance overhead** - Requires extra string↔bytes conversions for non-Latin1 input
 
-Benchmarks show the pure JS implementation is **1.6x-4.1x faster** for encoding and **1.1x-2.5x faster** for decoding.
+Benchmarks show the pure JS implementation is **1.7x-5x faster** for encoding. For decoding, performance varies by data size: **1.3x faster** for small inputs, while native `atob` is faster for medium/large data (1.4x-1.8x).
 
 ## License
 

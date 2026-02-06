@@ -19,7 +19,7 @@ Zero-dependency codec library for Base64, Hex, UTF-8 and ByteString encoding/dec
 ## Features
 
 - **Zero dependencies** - No external runtime dependencies
-- **Base64** - Fast pure-JS implementation (faster than native `btoa`/`atob`)
+- **Base64** - Fast pure-JS encoding (faster than native `btoa`), native decoding with fallback
 - **Hex** - Hexadecimal encoding/decoding
 - **UTF-8** - UTF-8 text encoding/decoding with fallback support
 - **ByteString** - Binary string conversions

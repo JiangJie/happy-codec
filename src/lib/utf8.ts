@@ -141,7 +141,7 @@ function decodeUtf8Fallback(data: BufferSource, fatal: boolean): string {
      */
     function handleInvalid(): void {
         if (fatal) {
-            throw new TypeError('Invalid UTF-8 byte sequence');
+            throw new TypeError('The encoded data was not valid for encoding utf-8');
         }
         str += '\ufffd';
         i += 1;

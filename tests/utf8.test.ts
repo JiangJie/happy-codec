@@ -146,7 +146,7 @@ describe('UTF-8 fallback implementation', () => {
 
     test('decodeUtf8 throws on invalid UTF-8 byte sequence when fatal is true without TextDecoder', () => {
         const buffer = new Uint8Array([0xf8, 0x80, 0x80, 0x80]).buffer;
-        expect(() => decodeUtf8Fallback(buffer, { fatal: true })).toThrow('Invalid UTF-8 byte sequence');
+        expect(() => decodeUtf8Fallback(buffer, { fatal: true })).toThrow('The encoded data was not valid for encoding utf-8');
     });
 
     test('decodeUtf8 handles truncated multi-byte sequence without TextDecoder', () => {
@@ -158,7 +158,7 @@ describe('UTF-8 fallback implementation', () => {
     test('decodeUtf8 throws on truncated multi-byte sequence when fatal is true without TextDecoder', () => {
         // 0xF0 starts a 4-byte sequence but only 2 continuation bytes follow
         const buffer = new Uint8Array([0xf0, 0x9f, 0x98]).buffer;
-        expect(() => decodeUtf8Fallback(buffer, { fatal: true })).toThrow('Invalid UTF-8 byte sequence');
+        expect(() => decodeUtf8Fallback(buffer, { fatal: true })).toThrow('The encoded data was not valid for encoding utf-8');
     });
 
     test('decodeUtf8 handles invalid continuation byte without TextDecoder', () => {
@@ -170,7 +170,7 @@ describe('UTF-8 fallback implementation', () => {
     test('decodeUtf8 throws on invalid continuation byte when fatal is true without TextDecoder', () => {
         // 0xC3 starts a 2-byte sequence, but 0xFF is not a valid continuation byte
         const buffer = new Uint8Array([0xc3, 0xff]).buffer;
-        expect(() => decodeUtf8Fallback(buffer, { fatal: true })).toThrow('Invalid UTF-8 byte sequence');
+        expect(() => decodeUtf8Fallback(buffer, { fatal: true })).toThrow('The encoded data was not valid for encoding utf-8');
     });
 
     test('decodeUtf8 handles overlong 3-byte sequence (0xE0) without TextDecoder', () => {

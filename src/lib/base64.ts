@@ -41,6 +41,12 @@ import type { DataSource } from './types.ts';
 // #region Internal Variables
 
 /**
+ * Threshold for using fallback implementation.
+ * For small inputs, pure JS is faster than native atob due to call overhead.
+ */
+const DECODE_FALLBACK_THRESHOLD = 116; // data.length (base64 string length)
+
+/**
  * String containing standard base64 characters.
  */
 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -137,10 +143,11 @@ export function encodeBase64(data: DataSource): string {
  * ```
  */
 export function decodeBase64(data: string): Uint8Array<ArrayBuffer> {
-    // Use native atob when available for better performance
-    return typeof atob === 'function'
-        ? decodeBase64Native(data)
-        : decodeBase64Fallback(data);
+    // Use fallback for small inputs (faster due to native API call overhead)
+    // or when atob is not available
+    return typeof atob !== 'function' || data.length <= DECODE_FALLBACK_THRESHOLD
+        ? decodeBase64Fallback(data)
+        : decodeBase64Native(data);
 }
 
 // #region Internal Functions

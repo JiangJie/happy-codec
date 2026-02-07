@@ -1,49 +1,24 @@
 /**
- * Base64 encoding/decoding benchmark.
- * Compares happy-codec implementation with native btoa/atob.
+ * Base64 decoding benchmark.
+ * Compares happy-codec fallback implementation with native atob.
  *
- * Note: For decodeBase64, we need to remove atob before importing the module
- * to force the use of fallback implementation, similar to utf8.bench.ts.
+ * Note: encodeBase64 always uses pure JS (faster than native btoa), no benchmark needed.
+ * decodeBase64 uses atob if available, this benchmark finds the crossover point.
  */
 
 import { bench, describe } from 'vitest';
 
-// Save native implementations for comparison
+// Save native atob for comparison
 const nativeAtob = globalThis.atob;
 
-// Remove atob to force fallback for decodeBase64
+// Remove atob to force fallback
 // @ts-expect-error Intentionally removing for benchmark
 globalThis.atob = undefined;
 
-// Import after removing atob to get fallback for decodeBase64
-const { decodeBase64, decodeUtf8, encodeBase64, encodeUtf8 } = await import('../src/mod.ts');
+// Import after removing atob to get fallback
+const { decodeBase64, encodeBase64 } = await import('../src/mod.ts');
 
-// Test data - using non-Latin1 strings (Chinese and emoji)
-const shortString = 'Hello, 世界!';
-const mediumString = 'Hello, 世界! 🎮'.repeat(100);
-const longString = 'The quick brown fox jumps over the lazy dog. 你好世界！🚀🎉'.repeat(1000);
-
-// Pre-encoded base64 strings for decode benchmarks
-const shortBase64 = encodeBase64(shortString);
-const mediumBase64 = encodeBase64(mediumString);
-const longBase64 = encodeBase64(longString);
-
-// Binary data for testing BufferSource input
-const shortBinaryBytes = new Uint8Array([72, 101, 108, 108, 111]);
-const mediumBinaryBytes = new Uint8Array(1000).map((_, i) => i % 256);
-const longBinaryBytes = new Uint8Array(10000).map((_, i) => i % 256);
-
-// Pre-encoded base64 for binary data decode benchmarks
-const shortBinaryBase64 = encodeBase64(shortBinaryBytes);
-const mediumBinaryBase64 = encodeBase64(mediumBinaryBytes);
-const longBinaryBase64 = encodeBase64(longBinaryBytes);
-
-// Helper: Convert Uint8Array to Latin1 string for btoa
-function uint8ArrayToLatin1(bytes: Uint8Array): string {
-    return String.fromCharCode(...bytes);
-}
-
-// Helper: Convert Latin1 string to Uint8Array for atob result
+// Helper: Convert Latin1 string to Uint8Array
 function latin1ToUint8Array(str: string): Uint8Array<ArrayBuffer> {
     const bytes = new Uint8Array(str.length);
     for (let i = 0; i < str.length; i++) {
@@ -52,156 +27,28 @@ function latin1ToUint8Array(str: string): Uint8Array<ArrayBuffer> {
     return bytes;
 }
 
-// Native base64 encode for non-Latin1 strings: string -> UTF-8 bytes -> Latin1 string -> btoa
-function nativeEncodeBase64(str: string): string {
-    const bytes = encodeUtf8(str);
-    return btoa(uint8ArrayToLatin1(bytes));
-}
+// Test sizes: base64 string length (data.length)
+const sizes = [116, 120];
 
-// Native base64 decode for non-Latin1 strings: atob -> Latin1 string -> bytes -> UTF-8 string
-function nativeDecodeBase64ToString(base64: string): string {
-    const latin1 = nativeAtob(base64);
-    const bytes = latin1ToUint8Array(latin1);
-    return decodeUtf8(bytes);
-}
-
-// Native base64 decode to bytes: atob -> Latin1 string -> bytes
-function nativeDecodeBase64ToBytes(base64: string): Uint8Array {
-    return latin1ToUint8Array(nativeAtob(base64));
-}
-
-// ============================================================================
-// String Encoding Benchmarks (non-Latin1 characters)
-// ============================================================================
-
-describe('Base64 Encode String - Short (non-Latin1)', () => {
-    bench('happy-codec encodeBase64', () => {
-        encodeBase64(shortString);
-    });
-
-    bench('native btoa (with UTF-8 conversion)', () => {
-        nativeEncodeBase64(shortString);
-    });
-});
-
-describe('Base64 Encode String - Medium (non-Latin1)', () => {
-    bench('happy-codec encodeBase64', () => {
-        encodeBase64(mediumString);
-    });
-
-    bench('native btoa (with UTF-8 conversion)', () => {
-        nativeEncodeBase64(mediumString);
-    });
-});
-
-describe('Base64 Encode String - Long (non-Latin1)', () => {
-    bench('happy-codec encodeBase64', () => {
-        encodeBase64(longString);
-    });
-
-    bench('native btoa (with UTF-8 conversion)', () => {
-        nativeEncodeBase64(longString);
-    });
+// Generate test data - base64 strings with exact lengths
+// Base64 encodes 3 bytes to 4 chars, so we need (size * 3 / 4) bytes to get size chars
+const base64Strings = sizes.map(size => {
+    const byteCount = (size * 3) / 4;
+    return encodeBase64('a'.repeat(byteCount));
 });
 
 // ============================================================================
-// Binary Encoding Benchmarks
+// Base64 Decode - Find crossover point by data.length
 // ============================================================================
 
-describe('Base64 Encode Bytes - Short', () => {
-    bench('happy-codec encodeBase64', () => {
-        encodeBase64(shortBinaryBytes);
-    });
+sizes.forEach((_size, i) => {
+    describe(`Base64 Decode - ${base64Strings[i].length} chars`, () => {
+        bench('fallback', () => {
+            decodeBase64(base64Strings[i]);
+        });
 
-    bench('native btoa (with conversion)', () => {
-        btoa(uint8ArrayToLatin1(shortBinaryBytes));
-    });
-});
-
-describe('Base64 Encode Bytes - Medium', () => {
-    bench('happy-codec encodeBase64', () => {
-        encodeBase64(mediumBinaryBytes);
-    });
-
-    bench('native btoa (with conversion)', () => {
-        btoa(uint8ArrayToLatin1(mediumBinaryBytes));
-    });
-});
-
-describe('Base64 Encode Bytes - Long', () => {
-    bench('happy-codec encodeBase64', () => {
-        encodeBase64(longBinaryBytes);
-    });
-
-    bench('native btoa (with conversion)', () => {
-        btoa(uint8ArrayToLatin1(longBinaryBytes));
-    });
-});
-
-// ============================================================================
-// String Decoding Benchmarks (decode to string, non-Latin1)
-// ============================================================================
-
-describe('Base64 Decode to String - Short (non-Latin1)', () => {
-    bench('happy-codec decodeBase64 (fallback) + decodeUtf8', () => {
-        decodeUtf8(decodeBase64(shortBase64));
-    });
-
-    bench('native atob (with UTF-8 conversion)', () => {
-        nativeDecodeBase64ToString(shortBase64);
-    });
-});
-
-describe('Base64 Decode to String - Medium (non-Latin1)', () => {
-    bench('happy-codec decodeBase64 (fallback) + decodeUtf8', () => {
-        decodeUtf8(decodeBase64(mediumBase64));
-    });
-
-    bench('native atob (with UTF-8 conversion)', () => {
-        nativeDecodeBase64ToString(mediumBase64);
-    });
-});
-
-describe('Base64 Decode to String - Long (non-Latin1)', () => {
-    bench('happy-codec decodeBase64 (fallback) + decodeUtf8', () => {
-        decodeUtf8(decodeBase64(longBase64));
-    });
-
-    bench('native atob (with UTF-8 conversion)', () => {
-        nativeDecodeBase64ToString(longBase64);
-    });
-});
-
-// ============================================================================
-// Binary Decoding Benchmarks (decode to bytes)
-// ============================================================================
-
-describe('Base64 Decode to Bytes - Short', () => {
-    bench('happy-codec decodeBase64 (fallback)', () => {
-        decodeBase64(shortBinaryBase64);
-    });
-
-    bench('native atob (with conversion)', () => {
-        nativeDecodeBase64ToBytes(shortBinaryBase64);
-    });
-});
-
-describe('Base64 Decode to Bytes - Medium', () => {
-    bench('happy-codec decodeBase64 (fallback)', () => {
-        decodeBase64(mediumBinaryBase64);
-    });
-
-    bench('native atob (with conversion)', () => {
-        nativeDecodeBase64ToBytes(mediumBinaryBase64);
-    });
-});
-
-describe('Base64 Decode to Bytes - Long', () => {
-    bench('happy-codec decodeBase64 (fallback)', () => {
-        decodeBase64(longBinaryBase64);
-    });
-
-    bench('native atob (with conversion)', () => {
-        nativeDecodeBase64ToBytes(longBinaryBase64);
+        bench('native atob', () => {
+            latin1ToUint8Array(nativeAtob(base64Strings[i]));
+        });
     });
 });

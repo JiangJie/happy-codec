@@ -33,6 +33,9 @@ const fatalDecoderIgnoreBOM = Lazy(() => new TextDecoder('utf-8', { fatal: true,
 /**
  * Encodes string data to `Uint8Array` (UTF-8 encoding).
  *
+ * Uses pure JS for small strings (length <= 21) and native `TextEncoder` for larger ones.
+ * Falls back to pure JS when `TextEncoder` is not available.
+ *
  * @param data - The string data to encode.
  * @returns Encoded `Uint8Array`.
  * @since 1.0.0
@@ -52,6 +55,9 @@ export function encodeUtf8(data: string): Uint8Array<ArrayBuffer> {
 
 /**
  * Decodes binary data to string (UTF-8 decoding).
+ *
+ * Uses pure JS for small data (byteLength <= 4) and native `TextDecoder` for larger ones.
+ * Falls back to pure JS when `TextDecoder` is not available.
  *
  * @param data - The binary data to decode.
  * @param options - Decoding options (same as TextDecoderOptions).

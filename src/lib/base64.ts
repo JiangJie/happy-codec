@@ -126,8 +126,8 @@ export function encodeBase64(data: DataSource): string {
 /**
  * Converts a Base64 encoded string to Uint8Array.
  *
- * Uses native `atob` when available for better performance on medium/long data,
- * falls back to pure JS implementation when `atob` is not available.
+ * Uses pure JS for small strings (length <= 116) and native `atob` for larger ones.
+ * Falls back to pure JS when `atob` is not available.
  *
  * @param data - Base64 encoded string.
  * @returns Decoded Uint8Array.

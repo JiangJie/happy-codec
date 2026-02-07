@@ -165,15 +165,22 @@ function decodeBase64Native(data: string): Uint8Array<ArrayBuffer> {
 
 /**
  * Pure JS fallback implementation.
- * Used when atob is not available.
+ * Used when atob is not available or for small inputs.
  *
  * @param data - Base64 encoded string.
  * @returns Decoded Uint8Array.
+ * @throws {Error} If length % 4 === 1 (invalid base64 length).
  */
 function decodeBase64Fallback(data: string): Uint8Array<ArrayBuffer> {
     const { length } = data;
 
-    let byteLength = length * 0.75;
+    // Invalid: length % 4 === 1 cannot form valid base64
+    if (length % 4 === 1) {
+        throw new Error('The string to be decoded is not correctly encoded');
+    }
+
+    // Calculate byte length: (length * 3 / 4), accounting for padding
+    let byteLength = (length * 3) >> 2; // Use bit shift to avoid decimals
 
     if (data[length - 1] === '=') {
         byteLength--;

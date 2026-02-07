@@ -210,4 +210,25 @@ describe('Base64 decodeBase64 fallback implementation', () => {
             expect(decoded).toEqual(original);
         }
     });
+
+    test('decodeBase64 throws on invalid length (length % 4 === 1) without atob', () => {
+        // length 1, 5, 9 are invalid
+        expect(() => decodeBase64Fallback('a')).toThrow('The string to be decoded is not correctly encoded');
+        expect(() => decodeBase64Fallback('abcde')).toThrow('The string to be decoded is not correctly encoded');
+        expect(() => decodeBase64Fallback('abcdefghi')).toThrow('The string to be decoded is not correctly encoded');
+    });
+
+    test('decodeBase64 handles non-padded base64 (length % 4 !== 0) without atob', () => {
+        // length 2: 'ab' -> 1 byte
+        const result2 = decodeBase64Fallback('YWI');  // 'ab' without padding, should decode to 'ab' first 2 chars
+        expect(result2.length).toBe(2);
+
+        // length 3: 'abc' -> 2 bytes
+        const result3 = decodeBase64Fallback('YWJj'); // 'abc' (4 chars, no padding needed)
+        expect(result3.length).toBe(3);
+
+        // Verify with native atob behavior
+        expect(decodeBase64Fallback('YWI')).toEqual(new Uint8Array([97, 98])); // 'ab'
+        expect(decodeBase64Fallback('YWJj')).toEqual(new Uint8Array([97, 98, 99])); // 'abc'
+    });
 });

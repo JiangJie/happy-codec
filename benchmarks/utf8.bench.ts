@@ -2,8 +2,10 @@
  * UTF-8 encoding/decoding benchmark.
  * Compares happy-codec fallback implementation with native TextEncoder/TextDecoder.
  *
- * Note: We need to remove TextEncoder/TextDecoder before importing the module
- * AND keep them removed during benchmark execution to force the use of fallback implementations.
+ * Strategy: Use worst-case characters for fallback to find max size where fallback wins.
+ *
+ * - encodeUtf8: Use 3-byte CJK chars (max bytes.push calls per string.length)
+ * - decodeUtf8: Use Latin1 chars (max str += calls per byteLength)
  */
 
 import { bench, describe } from 'vitest';
@@ -21,92 +23,54 @@ globalThis.TextDecoder = undefined;
 // Import after removing native implementations to get fallback
 const { decodeUtf8, encodeUtf8 } = await import('../src/mod.ts');
 
-// Test data - create these while TextEncoder is still removed
-// We need to use the fallback to encode the test bytes
-const shortString = 'Hello, 世界!';
-const mediumString = 'Hello, 世界! 🎮'.repeat(100);
-const longString = 'The quick brown fox jumps over the lazy dog. 你好世界！🚀🎉'.repeat(1000);
-
-// Encode bytes using fallback (TextEncoder is still undefined)
-const shortBytes = encodeUtf8(shortString);
-const mediumBytes = encodeUtf8(mediumString);
-const longBytes = encodeUtf8(longString);
-
-// Restore native implementations for comparison benchmarks ONLY
-// We need to keep TextEncoder/TextDecoder as undefined for the happy-codec tests
-// So we create wrapper functions
-
+// Create native instances for comparison
 const textEncoder = new NativeTextEncoder();
 const textDecoder = new NativeTextDecoder('utf-8');
 
-// Native wrappers that use the saved implementations
-function nativeEncode(str: string): Uint8Array {
-    return textEncoder.encode(str);
-}
+// Test characters - chosen to maximize fallback work per unit
+const LATIN1_CHAR = 'a'; // 1 byte in UTF-8, best for decode (most str += per byte)
+const CJK_CHAR = '中'; // 3 bytes in UTF-8, best for encode (most bytes.push per char)
+const BYTE_COUNT_CJK = 3;
 
-function nativeDecode(bytes: BufferSource): string {
-    return textDecoder.decode(bytes);
-}
+// Sizes to find crossover point
+const encodeSizes = [21, 22]; // string.length
+const decodeSizes = [3, 4, 5, 6, 7]; // byteLength
 
-// Note: TextEncoder/TextDecoder remain undefined here,
-// so encodeUtf8/decodeUtf8 will use fallback implementations
+// Generate test data for encode - use 3-byte CJK chars (max bytes.push per string.length)
+const encodeStrings = encodeSizes.map(charCount => CJK_CHAR.repeat(charCount));
 
-describe('UTF-8 Encode - Short String', () => {
-    bench('happy-codec encodeUtf8 (fallback)', () => {
-        encodeUtf8(shortString);
-    });
+// Generate test data for decode - use Latin1 chars (max str += per byteLength)
+const decodeBytes = decodeSizes.map(byteCount => textEncoder.encode(LATIN1_CHAR.repeat(byteCount)));
 
-    bench('native TextEncoder', () => {
-        nativeEncode(shortString);
-    });
-});
+// ============================================================================
+// UTF-8 Encode - 3-byte CJK Characters (worst case for fallback)
+// ============================================================================
 
-describe('UTF-8 Encode - Medium String', () => {
-    bench('happy-codec encodeUtf8 (fallback)', () => {
-        encodeUtf8(mediumString);
-    });
+encodeSizes.forEach((charCount, i) => {
+    const byteCount = charCount * BYTE_COUNT_CJK; // 3 bytes per CJK char
+    describe(`UTF-8 Encode - ${charCount} chars (${byteCount} bytes)`, () => {
+        bench('fallback', () => {
+            encodeUtf8(encodeStrings[i]);
+        });
 
-    bench('native TextEncoder', () => {
-        nativeEncode(mediumString);
-    });
-});
-
-describe('UTF-8 Encode - Long String', () => {
-    bench('happy-codec encodeUtf8 (fallback)', () => {
-        encodeUtf8(longString);
-    });
-
-    bench('native TextEncoder', () => {
-        nativeEncode(longString);
+        bench('native TextEncoder', () => {
+            textEncoder.encode(encodeStrings[i]);
+        });
     });
 });
 
-describe('UTF-8 Decode - Short Bytes', () => {
-    bench('happy-codec decodeUtf8 (fallback)', () => {
-        decodeUtf8(shortBytes);
-    });
+// ============================================================================
+// UTF-8 Decode - Latin1 Characters (worst case for fallback)
+// ============================================================================
 
-    bench('native TextDecoder', () => {
-        nativeDecode(shortBytes);
-    });
-});
+decodeSizes.forEach((byteCount, i) => {
+    describe(`UTF-8 Decode - ${byteCount} bytes (${byteCount} chars)`, () => {
+        bench('fallback', () => {
+            decodeUtf8(decodeBytes[i]);
+        });
 
-describe('UTF-8 Decode - Medium Bytes', () => {
-    bench('happy-codec decodeUtf8 (fallback)', () => {
-        decodeUtf8(mediumBytes);
-    });
-
-    bench('native TextDecoder', () => {
-        nativeDecode(mediumBytes);
-    });
-});
-
-describe('UTF-8 Decode - Long Bytes', () => {
-    bench('happy-codec decodeUtf8 (fallback)', () => {
-        decodeUtf8(longBytes);
-    });
-
-    bench('native TextDecoder', () => {
-        nativeDecode(longBytes);
+        bench('native TextDecoder', () => {
+            textDecoder.decode(decodeBytes[i]);
+        });
     });
 });

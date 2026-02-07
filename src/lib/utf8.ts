@@ -12,6 +12,13 @@ import { bufferSourceToBytes, Lazy } from '../internal/mod.ts';
  */
 const BOM = '\ufeff';
 
+/**
+ * Threshold for using fallback implementation.
+ * For small inputs, pure JS is faster than native API due to call overhead.
+ */
+const ENCODE_FALLBACK_THRESHOLD = 21; // string.length
+const DECODE_FALLBACK_THRESHOLD = 4; // byteLength
+
 // Cached TextEncoder instance
 const encoder = Lazy(() => new TextEncoder());
 
@@ -36,10 +43,11 @@ const fatalDecoderIgnoreBOM = Lazy(() => new TextDecoder('utf-8', { fatal: true,
  * ```
  */
 export function encodeUtf8(data: string): Uint8Array<ArrayBuffer> {
-    // Compatible with environments that may not have `TextEncoder`
-    return typeof TextEncoder === 'function'
-        ? encoder.force().encode(data)
-        : encodeUtf8Fallback(data);
+    // Use fallback for small inputs (faster due to native API call overhead)
+    // or when TextEncoder is not available
+    return typeof TextEncoder !== 'function' || data.length <= ENCODE_FALLBACK_THRESHOLD
+        ? encodeUtf8Fallback(data)
+        : encoder.force().encode(data);
 }
 
 /**
@@ -75,15 +83,17 @@ export function decodeUtf8(data: BufferSource, options?: TextDecoderOptions): st
         ignoreBOM = false,
     } = options ?? {};
 
-    // Compatible with environments that may not have `TextDecoder`
-    if (typeof TextDecoder === 'function') {
-        const decoderInstance = fatal
-            ? (ignoreBOM ? fatalDecoderIgnoreBOM : fatalDecoder)
-            : (ignoreBOM ? decoderIgnoreBOM : decoder);
-        return decoderInstance.force().decode(data);
+    // Use fallback for small inputs (faster due to native API call overhead)
+    // or when TextDecoder is not available
+    // get byte length for threshold check
+    if (typeof TextDecoder !== 'function' || data.byteLength <= DECODE_FALLBACK_THRESHOLD) {
+        return decodeUtf8Fallback(data, { fatal, ignoreBOM });
     }
 
-    return decodeUtf8Fallback(data, { fatal, ignoreBOM });
+    const decoderInstance = fatal
+        ? (ignoreBOM ? fatalDecoderIgnoreBOM : fatalDecoder)
+        : (ignoreBOM ? decoderIgnoreBOM : decoder);
+    return decoderInstance.force().decode(data);
 }
 
 // #region Pure JS Implementation

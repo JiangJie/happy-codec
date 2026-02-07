@@ -66,6 +66,36 @@ test('decodeUtf8 with fatal and ignoreBOM combination', () => {
     expect(() => decodeUtf8(invalid, { fatal: true, ignoreBOM: true })).toThrow();
 });
 
+// Tests for large inputs that use native API path (above threshold)
+test('encodeUtf8 uses native TextEncoder for large strings', () => {
+    // String longer than ENCODE_FALLBACK_THRESHOLD (21 chars)
+    const largeString = 'a'.repeat(50);
+    const result = encodeUtf8(largeString);
+    expect(result).toBeInstanceOf(Uint8Array);
+    expect(result.length).toBe(50);
+    expect(decodeUtf8(result)).toBe(largeString);
+});
+
+test('decodeUtf8 uses native TextDecoder for large data', () => {
+    // Data longer than DECODE_FALLBACK_THRESHOLD (4 bytes)
+    const largeData = new Uint8Array([0x48, 0x65, 0x6c, 0x6c, 0x6f]); // 'Hello' - 5 bytes
+    expect(decodeUtf8(largeData)).toBe('Hello');
+});
+
+test('decodeUtf8 uses native TextDecoder with fatal option for large data', () => {
+    // Data longer than DECODE_FALLBACK_THRESHOLD (4 bytes) with fatal option
+    const largeData = new Uint8Array([0x48, 0x65, 0x6c, 0x6c, 0x6f]); // 'Hello' - 5 bytes
+    expect(decodeUtf8(largeData, { fatal: true })).toBe('Hello');
+    expect(decodeUtf8(largeData, { fatal: true, ignoreBOM: true })).toBe('Hello');
+});
+
+test('decodeUtf8 uses native TextDecoder with ignoreBOM option for large data', () => {
+    // Data with BOM longer than threshold
+    const largeDataWithBOM = new Uint8Array([0xef, 0xbb, 0xbf, 0x48, 0x65, 0x6c, 0x6c, 0x6f]); // BOM + 'Hello'
+    expect(decodeUtf8(largeDataWithBOM)).toBe('Hello');
+    expect(decodeUtf8(largeDataWithBOM, { ignoreBOM: true })).toBe('\ufeffHello');
+});
+
 describe('UTF-8 fallback implementation', () => {
     let encodeUtf8Fallback: (data: string) => Uint8Array<ArrayBuffer>;
     let decodeUtf8Fallback: (data: BufferSource, options?: TextDecoderOptions) => string;

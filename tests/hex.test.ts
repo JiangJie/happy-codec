@@ -47,6 +47,19 @@ test('decodeHex with single byte values', () => {
     expect(decodeHex('10')).toEqual(new Uint8Array([16]));
 });
 
+test('decodeHex throws on odd-length string', () => {
+    expect(() => decodeHex('f')).toThrow('Invalid hex string: length must be even');
+    expect(() => decodeHex('fff')).toThrow('Invalid hex string: length must be even');
+    expect(() => decodeHex('abcde')).toThrow('Invalid hex string: length must be even');
+});
+
+test('decodeHex throws on non-hex characters', () => {
+    expect(() => decodeHex('xyz')).toThrow('Invalid hex string');
+    expect(() => decodeHex('0g')).toThrow('Invalid hex string: contains non-hex characters');
+    expect(() => decodeHex('zz')).toThrow('Invalid hex string: contains non-hex characters');
+    expect(() => decodeHex('gh')).toThrow('Invalid hex string: contains non-hex characters');
+});
+
 test('hex round-trip conversion', () => {
     const original = new Uint8Array([0xde, 0xad, 0xbe, 0xef, 0x00, 0xff]);
     const hex = encodeHex(original);

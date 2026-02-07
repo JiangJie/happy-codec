@@ -33,6 +33,12 @@ test('encodeByteString converts string to byte string', () => {
     expect(result).toBe('Hello');
 });
 
+test('decodeByteString throws on characters above 0xFF', () => {
+    expect(() => decodeByteString('你好')).toThrow('Invalid byte string: contains characters above 0xFF');
+    expect(() => decodeByteString('abc你')).toThrow('Invalid byte string: contains characters above 0xFF');
+    expect(() => decodeByteString('\u0100')).toThrow('Invalid byte string: contains characters above 0xFF');
+});
+
 test('encodeByteString handles unicode string', () => {
     const str = '中文';
     const result = encodeByteString(str);

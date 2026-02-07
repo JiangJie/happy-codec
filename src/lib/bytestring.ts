@@ -30,6 +30,7 @@ export function encodeByteString(data: DataSource): string {
  *
  * @param data - The byte string to decode.
  * @returns Uint8Array.
+ * @throws {Error} If string contains characters with charCode above 0xFF.
  * @since 1.0.0
  * @example
  * ```ts
@@ -42,7 +43,13 @@ export function decodeByteString(data: string): Uint8Array<ArrayBuffer> {
     const bytes = new Uint8Array(length);
 
     for (let i = 0; i < length; i++) {
-        bytes[i] = data.charCodeAt(i);
+        const charCode = data.charCodeAt(i);
+
+        if (charCode > 0xFF) {
+            throw new Error('Invalid byte string: contains characters above 0xFF');
+        }
+
+        bytes[i] = charCode;
     }
 
     return bytes;

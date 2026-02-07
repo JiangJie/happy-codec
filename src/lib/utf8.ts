@@ -15,8 +15,14 @@ const BOM = '\ufeff';
 /**
  * Threshold for using fallback implementation.
  * For small inputs, pure JS is faster than native API due to call overhead.
+ *
+ * ENCODE: 21 chars of 3-byte CJK characters = 63 bytes (worst case),
+ * benchmarked with maximum bytes.push() calls per string.length.
+ *
+ * DECODE: 4 bytes of Latin1 characters (worst case),
+ * benchmarked with maximum str += calls per byteLength.
  */
-const ENCODE_FALLBACK_THRESHOLD = 21; // string.length
+const ENCODE_FALLBACK_THRESHOLD = 21; // string.length (up to 63 bytes)
 const DECODE_FALLBACK_THRESHOLD = 4; // byteLength
 
 // Cached TextEncoder instance
@@ -33,7 +39,7 @@ const fatalDecoderIgnoreBOM = Lazy(() => new TextDecoder('utf-8', { fatal: true,
 /**
  * Encodes string data to `Uint8Array` (UTF-8 encoding).
  *
- * Uses pure JS for small strings (length <= 21) and native `TextEncoder` for larger ones.
+ * Uses pure JS for small strings (length <= 21, up to 63 bytes) and native `TextEncoder` for larger ones.
  * Falls back to pure JS when `TextEncoder` is not available.
  *
  * @param data - The string data to encode.
@@ -106,7 +112,6 @@ export function decodeUtf8(data: BufferSource, options?: TextDecoderOptions): st
 
 /**
  * Pure JS implementation of UTF-8 encoding.
- * Used when the platform does not support TextEncoder.
  *
  * @param data - The string to encode.
  * @returns Encoded Uint8Array.
@@ -145,7 +150,6 @@ function encodeUtf8Fallback(data: string): Uint8Array<ArrayBuffer> {
 
 /**
  * Pure JS implementation of UTF-8 decoding.
- * Used when the platform does not support TextDecoder.
  *
  * @param data - The BufferSource to decode.
  * @param options - Decoding options (same as TextDecoderOptions).

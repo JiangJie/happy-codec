@@ -3,30 +3,13 @@
  *
  * ## Implementation Strategy
  *
- * **Encoding (`encodeBase64`)**: Uses pure JS implementation because:
+ * **Encoding (`encodeBase64`)**: Always uses pure JS implementation because:
  * - Native `btoa` only handles Latin1 characters (0x00-0xFF)
  * - Processing UTF-8 data requires additional `string → UTF-8 bytes → Latin1 string → btoa` conversion
  * - Benchmark shows pure JS is 1.8x ~ 5x faster than btoa with conversion
  *
- * **Decoding (`decodeBase64`)**: Uses native `atob` when available because:
- * - Benchmark shows `atob` is 1.3x ~ 1.8x faster for medium/long data
- * - Falls back to pure JS implementation when `atob` is not available
- *
- * ## Benchmark Results
- *
- * ### Encoding (pure JS vs btoa + conversion)
- * | Data Size | Pure JS Performance |
- * |-----------|---------------------|
- * | Short     | 1.8x faster         |
- * | Medium    | 3.8x faster         |
- * | Long      | 5.1x faster         |
- *
- * ### Decoding (atob vs pure JS fallback)
- * | Data Size | atob Performance    |
- * |-----------|---------------------|
- * | Short     | ~1x (similar)       |
- * | Medium    | 1.5x faster         |
- * | Long      | 1.8x faster         |
+ * **Decoding (`decodeBase64`)**: Uses pure JS for small inputs (length < 128),
+ * native `atob` for larger inputs, falls back to pure JS when `atob` is not available.
  *
  * Derived from @std/encoding/base64 and https://github.com/cross-org/base64
  *
@@ -44,7 +27,7 @@ import type { DataSource } from './types.ts';
  * Threshold for using fallback implementation.
  * For small inputs, pure JS is faster than native atob due to call overhead.
  */
-const DECODE_FALLBACK_THRESHOLD = 116; // data.length (base64 string length)
+const DECODE_FALLBACK_THRESHOLD = 128; // data.length (base64 string length)
 
 /**
  * String containing standard base64 characters.
@@ -126,7 +109,7 @@ export function encodeBase64(data: DataSource): string {
 /**
  * Converts a Base64 encoded string to Uint8Array.
  *
- * Uses pure JS for small strings (length <= 116) and native `atob` for larger ones.
+ * Uses pure JS for small strings (length < 128) and native `atob` for larger ones.
  * Falls back to pure JS when `atob` is not available.
  *
  * @param data - Base64 encoded string.
@@ -145,7 +128,7 @@ export function encodeBase64(data: DataSource): string {
 export function decodeBase64(data: string): Uint8Array<ArrayBuffer> {
     // Use fallback for small inputs (faster due to native API call overhead)
     // or when atob is not available
-    return typeof atob !== 'function' || data.length <= DECODE_FALLBACK_THRESHOLD
+    return typeof atob !== 'function' || data.length < DECODE_FALLBACK_THRESHOLD
         ? decodeBase64Fallback(data)
         : decodeBase64Native(data);
 }
@@ -165,7 +148,6 @@ function decodeBase64Native(data: string): Uint8Array<ArrayBuffer> {
 
 /**
  * Pure JS fallback implementation.
- * Used when atob is not available or for small inputs.
  *
  * @param data - Base64 encoded string.
  * @returns Decoded Uint8Array.

@@ -28,7 +28,7 @@ function latin1ToUint8Array(str: string): Uint8Array<ArrayBuffer> {
 }
 
 // Test sizes: base64 string length (data.length)
-const sizes = [116, 120];
+const sizes = [124, 128];
 
 // Generate test data - base64 strings with exact lengths
 // Base64 encodes 3 bytes to 4 chars, so we need (size * 3 / 4) bytes to get size chars

@@ -1,9 +1,14 @@
 /**
- * Base64 decoding benchmark.
- * Compares happy-codec fallback implementation with native atob.
+ * Base64 encoding/decoding benchmark.
+ * Compares happy-codec fallback implementation with native APIs.
  *
- * Note: encodeBase64 always uses pure JS (faster than native btoa), no benchmark needed.
- * decodeBase64 uses atob if available, this benchmark finds the crossover point.
+ * **Encoding (`encodeBase64`)**:
+ * - Native `toBase64()` wins at >= 21 bytes.
+ * - Below 21 bytes, pure JS is faster due to native call overhead.
+ *
+ * **Decoding (`decodeBase64`)**:
+ * - Native `fromBase64()` wins at >= 88 base64 chars (≈66 bytes).
+ * - Below threshold, pure JS fallback is faster.
  *
  * Crossover points below (sizes) were determined under:
  *   Node.js v25.6.0, AMD EPYC 7K83, Linux x86_64.
@@ -12,47 +17,61 @@
 
 import { bench, describe } from 'vitest';
 
-// Save native atob for comparison
-const nativeAtob = globalThis.atob;
+// Save native implementations for comparison
+const nativeFromBase64 = Uint8Array.fromBase64;
+const nativeToBase64 = Uint8Array.prototype.toBase64;
 
-// Remove atob to force fallback
-// @ts-expect-error Intentionally removing for benchmark
-globalThis.atob = undefined;
+// Remove native APIs to get fallback
+// @ts-expect-error - intentionally removing for benchmark
+delete Uint8Array.fromBase64;
+// @ts-expect-error - intentionally removing for benchmark
+delete Uint8Array.prototype.toBase64;
 
-// Import after removing atob to get fallback
-const { decodeBase64, encodeBase64 } = await import('../src/mod.ts');
+const { encodeBase64, decodeBase64 } = await import('../src/mod.ts');
 
-// Helper: Convert Latin1 string to Uint8Array
-function latin1ToUint8Array(str: string): Uint8Array<ArrayBuffer> {
-    const bytes = new Uint8Array(str.length);
-    for (let i = 0; i < str.length; i++) {
-        bytes[i] = str.charCodeAt(i);
-    }
+// ============================================================================
+// Base64 Encode - fallback vs native toBase64
+// ============================================================================
+
+const encodeSizes = [20, 21];
+
+const encodeBuffers = encodeSizes.map(size => {
+    const bytes = new Uint8Array(size);
+    for (let i = 0; i < size; i++) bytes[i] = i & 0xFF;
     return bytes;
-}
+});
 
-// Test sizes: base64 string length (data.length)
-const sizes = [124, 128];
+encodeSizes.forEach((size, i) => {
+    describe(`Base64 Encode - ${size} bytes`, () => {
+        bench('fallback', () => {
+            encodeBase64(encodeBuffers[i]);
+        });
 
-// Generate test data - base64 strings with exact lengths
-// Base64 encodes 3 bytes to 4 chars, so we need (size * 3 / 4) bytes to get size chars
-const base64Strings = sizes.map(size => {
+        bench('native toBase64', () => {
+            nativeToBase64.call(encodeBuffers[i]);
+        });
+    });
+});
+
+// ============================================================================
+// Base64 Decode - fallback vs native fromBase64
+// ============================================================================
+
+const decodeSizes = [84, 88];
+
+const base64Strings = decodeSizes.map(size => {
     const byteCount = (size * 3) / 4;
     return encodeBase64('a'.repeat(byteCount));
 });
 
-// ============================================================================
-// Base64 Decode - Find crossover point by data.length
-// ============================================================================
-
-sizes.forEach((_size, i) => {
+decodeSizes.forEach((_size, i) => {
     describe(`Base64 Decode - ${base64Strings[i].length} chars`, () => {
         bench('fallback', () => {
             decodeBase64(base64Strings[i]);
         });
 
-        bench('native atob', () => {
-            latin1ToUint8Array(nativeAtob(base64Strings[i]));
+        bench('native fromBase64', () => {
+            nativeFromBase64(base64Strings[i]);
         });
     });
 });

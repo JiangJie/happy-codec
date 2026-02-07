@@ -20,8 +20,8 @@ Zero-dependency codec library for Base64, Hex, UTF-8 and ByteString encoding/dec
 
 - **Zero dependencies** - No external runtime dependencies
 - **Universal runtime** - Works in any JavaScript environment (Browser, Node.js, Deno, Bun, Web Workers, 小程序/小游戏 (如微信小游戏), etc.) regardless of DOM/BOM support
-- **Base64** - Fast pure-JS encoding (faster than native `btoa`), hybrid decoding: pure JS for small inputs, native `atob` for larger ones (if available)
-- **Hex** - Hexadecimal encoding/decoding
+- **Base64** - Hybrid encoding/decoding: pure JS for small inputs, native `Uint8Array.prototype.toBase64`/`Uint8Array.fromBase64` for larger ones (if available)
+- **Hex** - Hybrid encoding/decoding: pure JS for small inputs, native `Uint8Array.prototype.toHex`/`Uint8Array.fromHex` for larger ones (if available)
 - **UTF-8** - Hybrid UTF-8 encoding/decoding: pure JS for small inputs, native `TextEncoder`/`TextDecoder` for larger ones (if available)
 - **ByteString** - Binary string conversions
 
@@ -89,12 +89,17 @@ All encoding/decoding functions are benchmarked against native APIs to choose th
 
 ### Base64
 
-The native `btoa`/`atob` functions have limitations:
+happy-codec uses native `Uint8Array.prototype.toBase64` / `Uint8Array.fromBase64` (TC39 Stage 4) when available, with pure JS fallback for environments that don't support them yet.
 
-1. **Latin1 restriction** - Only handles characters 0x00-0xFF
-2. **Performance overhead** - Requires extra string↔bytes conversions for non-Latin1 input
+- **`encodeBase64`**: Native `toBase64` for inputs >= 21 bytes, pure JS for smaller ones.
+- **`decodeBase64`**: Native `fromBase64` for inputs >= 88 base64 chars (~66 bytes), pure JS for smaller ones.
 
-Benchmarks show the pure JS implementation is **1.7x-5x faster** for encoding. For decoding, performance varies by data size: **1.3x faster** for small inputs, while native `atob` is faster for medium/large data (1.4x-1.8x).
+### Hex
+
+happy-codec uses native `Uint8Array.prototype.toHex` / `Uint8Array.fromHex` (TC39 Stage 4) when available, with pure JS fallback for environments that don't support them yet.
+
+- **`encodeHex`**: Always uses native `toHex` when available (faster at all sizes).
+- **`decodeHex`**: Native `fromHex` for inputs >= 22 hex chars (11 bytes), pure JS for smaller ones.
 
 ### UTF-8
 

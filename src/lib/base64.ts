@@ -3,31 +3,46 @@
  *
  * ## Implementation Strategy
  *
- * **Encoding (`encodeBase64`)**: Always uses pure JS implementation because:
- * - Native `btoa` only handles Latin1 characters (0x00-0xFF)
- * - Processing UTF-8 data requires additional `string → UTF-8 bytes → Latin1 string → btoa` conversion
- * - Benchmark shows pure JS is 1.8x ~ 5x faster than btoa with conversion
+ * **Encoding (`encodeBase64`)**:
+ * - Uses native `Uint8Array.prototype.toBase64` for larger inputs (>= 32 bytes) if available
+ * - Falls back to pure JS for small inputs or when native API is unavailable
  *
- * **Decoding (`decodeBase64`)**: Uses pure JS for small inputs (length < 128),
- * native `atob` for larger inputs, falls back to pure JS when `atob` is not available.
+ * **Decoding (`decodeBase64`)**:
+ * - Uses native `Uint8Array.fromBase64` for larger inputs (>= 24 chars) if available
+ * - Falls back to pure JS for small inputs or when native API is unavailable
  *
  * Derived from @std/encoding/base64 and https://github.com/cross-org/base64
  *
  * @module base64
  */
 
+// TC39 Stage 4: Uint8Array base64 methods (not yet in TS lib types)
+declare global {
+    interface Uint8Array {
+        toBase64(options?: { alphabet?: 'base64' | 'base64url'; omitPadding?: boolean; }): string;
+    }
+    interface Uint8ArrayConstructor {
+        fromBase64(base64: string, options?: { alphabet?: 'base64' | 'base64url'; lastChunkHandling?: 'loose' | 'strict' | 'stop-before-partial'; }): Uint8Array<ArrayBuffer>;
+    }
+}
+
 import { Lazy } from '../internal/mod.ts';
-import { decodeByteString } from './bytestring.ts';
 import { dataSourceToBytes } from './helpers.ts';
 import type { DataSource } from './types.ts';
 
 // #region Internal Variables
 
 /**
- * Threshold for using fallback implementation.
- * For small inputs, pure JS is faster than native atob due to call overhead.
+ * Threshold for using native `Uint8Array.prototype.toBase64`.
+ * For small inputs, pure JS is faster than native API due to call overhead.
  */
-const DECODE_FALLBACK_THRESHOLD = 128; // data.length (base64 string length)
+const ENCODE_NATIVE_THRESHOLD = 21; // byteLength
+
+/**
+ * Threshold for using native `Uint8Array.fromBase64`.
+ * For small inputs, pure JS is faster than native API due to call overhead.
+ */
+const DECODE_NATIVE_THRESHOLD = 88; // data.length (base64 string length, ≈66 bytes)
 
 /**
  * String containing standard base64 characters.
@@ -57,7 +72,8 @@ const lookup = Lazy(() => {
 /**
  * Converts DataSource (string or BufferSource) to a Base64 encoded string.
  *
- * Uses pure JS implementation on all platforms to avoid Latin1 limitations and extra conversion overhead.
+ * Uses native `Uint8Array.prototype.toBase64` for larger inputs if available,
+ * pure JS fallback for small inputs or when native API is unavailable.
  *
  * @param data - The data to encode, can be a string, ArrayBuffer, TypedArray, or DataView.
  * @returns Base64 encoded string.
@@ -75,12 +91,52 @@ const lookup = Lazy(() => {
  * ```
  */
 export function encodeBase64(data: DataSource): string {
-    let result = '';
-
     const bytes = dataSourceToBytes(data);
+
+    return typeof bytes.toBase64 === 'function' && bytes.byteLength >= ENCODE_NATIVE_THRESHOLD
+        ? bytes.toBase64()
+        : encodeBase64Fallback(bytes);
+}
+
+/**
+ * Converts a Base64 encoded string to Uint8Array.
+ *
+ * Uses native `Uint8Array.fromBase64` for larger inputs if available,
+ * pure JS fallback for small inputs or when native API is unavailable.
+ *
+ * @param data - Base64 encoded string.
+ * @returns Decoded Uint8Array.
+ * @since 1.0.0
+ * @example
+ * ```ts
+ * const buffer = decodeBase64('SGVsbG8=');
+ * console.log(buffer); // Uint8Array [72, 101, 108, 108, 111]
+ *
+ * // Decode to string
+ * const text = decodeUtf8(decodeBase64('SGVsbG8sIFdvcmxkIQ=='));
+ * console.log(text); // 'Hello, World!'
+ * ```
+ */
+export function decodeBase64(data: string): Uint8Array<ArrayBuffer> {
+    return typeof Uint8Array.fromBase64 === 'function' && data.length >= DECODE_NATIVE_THRESHOLD
+        ? Uint8Array.fromBase64(data)
+        : decodeBase64Fallback(data);
+}
+
+// #region Internal Functions
+
+/**
+ * Pure JS implementation of Base64 encoding.
+ *
+ * @param bytes - The bytes to encode.
+ * @returns Base64 encoded string.
+ */
+function encodeBase64Fallback(bytes: Uint8Array<ArrayBuffer>): string {
     const { byteLength } = bytes;
 
+    let result = '';
     let i = 2;
+
     for (; i < byteLength; i += 3) {
         result += base64abc[bytes[i - 2] >> 2];
         result += base64abc[((bytes[i - 2] & 0x03) << 4) | (bytes[i - 1] >> 4)];
@@ -109,46 +165,6 @@ export function encodeBase64(data: DataSource): string {
     }
 
     return result;
-}
-
-/**
- * Converts a Base64 encoded string to Uint8Array.
- *
- * Uses pure JS for small strings (length < 128) and native `atob` for larger ones.
- * Falls back to pure JS when `atob` is not available.
- *
- * @param data - Base64 encoded string.
- * @returns Decoded Uint8Array.
- * @since 1.0.0
- * @example
- * ```ts
- * const buffer = decodeBase64('SGVsbG8=');
- * console.log(buffer); // Uint8Array [72, 101, 108, 108, 111]
- *
- * // Decode to string
- * const text = decodeUtf8(decodeBase64('SGVsbG8sIFdvcmxkIQ=='));
- * console.log(text); // 'Hello, World!'
- * ```
- */
-export function decodeBase64(data: string): Uint8Array<ArrayBuffer> {
-    // Use fallback for small inputs (faster due to native API call overhead)
-    // or when atob is not available
-    return typeof atob !== 'function' || data.length < DECODE_FALLBACK_THRESHOLD
-        ? decodeBase64Fallback(data)
-        : decodeBase64Native(data);
-}
-
-// #region Internal Functions
-
-/**
- * Native implementation using atob.
- * Converts atob's Latin1 string result to Uint8Array.
- *
- * @param data - Base64 encoded string.
- * @returns Decoded Uint8Array.
- */
-function decodeBase64Native(data: string): Uint8Array<ArrayBuffer> {
-    return decodeByteString(atob(data));
 }
 
 /**

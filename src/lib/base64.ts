@@ -88,6 +88,11 @@ export function encodeBase64(data: DataSource): string {
         result += base64abc[bytes[i] & 0x3f];
     }
 
+    // Handle remaining bytes after the main loop.
+    // Loop starts at i=2, increments by 3, exits when i >= byteLength:
+    //   byteLength % 3 === 1 → i === byteLength + 1 → 1 byte remaining
+    //   byteLength % 3 === 2 → i === byteLength     → 2 bytes remaining
+
     if (i === byteLength + 1) {
         // 1 byte remaining to write
         result += base64abc[bytes[i - 2] >> 2];

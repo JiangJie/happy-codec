@@ -11,6 +11,7 @@
  */
 export function bufferSourceToBytes(data: BufferSource): Uint8Array<ArrayBuffer> {
     if (data instanceof Uint8Array) {
+        // Safe: Uint8Array.prototype.buffer is always an ArrayBuffer
         return data as Uint8Array<ArrayBuffer>;
     }
 

@@ -60,3 +60,17 @@ test('encodeByteString works with DataView', () => {
     const dataView = new DataView(buffer, 2, 5);
     expect(encodeByteString(dataView)).toBe('Hello');
 });
+
+test('encodeByteString handles large buffers without stack overflow', () => {
+    const size = 1_000_000;
+    const bytes = new Uint8Array(size);
+    for (let i = 0; i < size; i++) {
+        bytes[i] = i & 0xFF;
+    }
+
+    const result = encodeByteString(bytes);
+    expect(result.length).toBe(size);
+    expect(result.charCodeAt(0)).toBe(0);
+    expect(result.charCodeAt(255)).toBe(255);
+    expect(result.charCodeAt(256)).toBe(0);
+});

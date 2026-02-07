@@ -22,7 +22,13 @@ import type { DataSource } from './types.ts';
  * ```
  */
 export function encodeByteString(data: DataSource): string {
-    return String.fromCharCode(...dataSourceToBytes(data));
+    const bytes = dataSourceToBytes(data);
+
+    let result = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+        result += String.fromCharCode(bytes[i]);
+    }
+    return result;
 }
 
 /**

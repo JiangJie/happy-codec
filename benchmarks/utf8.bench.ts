@@ -6,6 +6,10 @@
  *
  * - encodeUtf8: Use 3-byte CJK chars (max bytes.push calls per string.length)
  * - decodeUtf8: Use Latin1 chars (max str += calls per byteLength)
+ *
+ * Crossover points below (encodeSizes, decodeSizes) were determined under:
+ *   Node.js v25.6.0, AMD EPYC 7K83, Linux x86_64.
+ * These thresholds may differ on other JS engines or hardware — re-run to verify.
  */
 
 import { bench, describe } from 'vitest';

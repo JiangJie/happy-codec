@@ -4,6 +4,10 @@
  *
  * Note: encodeBase64 always uses pure JS (faster than native btoa), no benchmark needed.
  * decodeBase64 uses atob if available, this benchmark finds the crossover point.
+ *
+ * Crossover points below (sizes) were determined under:
+ *   Node.js v25.6.0, AMD EPYC 7K83, Linux x86_64.
+ * These thresholds may differ on other JS engines or hardware — re-run to verify.
  */
 
 import { bench, describe } from 'vitest';

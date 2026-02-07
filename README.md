@@ -20,9 +20,9 @@ Zero-dependency codec library for Base64, Hex, UTF-8 and ByteString encoding/dec
 
 - **Zero dependencies** - No external runtime dependencies
 - **Universal runtime** - Works in any JavaScript environment (Browser, Node.js, Deno, Bun, Web Workers, 小程序/小游戏 (如微信小游戏), etc.) regardless of DOM/BOM support
-- **Base64** - Fast pure-JS encoding (faster than native `btoa`), native decoding with fallback
+- **Base64** - Fast pure-JS encoding (faster than native `btoa`), hybrid decoding: pure JS for small inputs, native `atob` for larger ones (if available)
 - **Hex** - Hexadecimal encoding/decoding
-- **UTF-8** - UTF-8 text encoding/decoding with fallback support
+- **UTF-8** - Hybrid UTF-8 encoding/decoding: pure JS for small inputs, native `TextEncoder`/`TextDecoder` for larger ones (if available)
 - **ByteString** - Binary string conversions
 
 ## Installation
@@ -83,7 +83,11 @@ const byteStr = encodeByteString(new Uint8Array([72, 101, 108, 108, 111])); // '
 const byteArr = decodeByteString('Hello'); // Uint8Array [72, 101, 108, 108, 111]
 ```
 
-## Why Pure JS Base64?
+## Performance
+
+All encoding/decoding functions are benchmarked against native APIs to choose the fastest strategy.
+
+### Base64
 
 The native `btoa`/`atob` functions have limitations:
 
@@ -91,6 +95,16 @@ The native `btoa`/`atob` functions have limitations:
 2. **Performance overhead** - Requires extra string↔bytes conversions for non-Latin1 input
 
 Benchmarks show the pure JS implementation is **1.7x-5x faster** for encoding. For decoding, performance varies by data size: **1.3x faster** for small inputs, while native `atob` is faster for medium/large data (1.4x-1.8x).
+
+### UTF-8
+
+Native `TextEncoder`/`TextDecoder` have per-call overhead that makes them slower than pure JS for small inputs. happy-codec uses a hybrid strategy based on benchmarks:
+
+- **`encodeUtf8`**: Pure JS for short strings (length <= 21, up to 63 bytes), native `TextEncoder` for larger ones. Falls back to pure JS when `TextEncoder` is unavailable.
+- **`decodeUtf8`**: Pure JS for small data (byteLength <= 4), native `TextDecoder` for larger ones. Falls back to pure JS when `TextDecoder` is unavailable.
+
+> **Benchmark environment:** Node.js v25.6.0, AMD EPYC 7K83 64-Core Processor, Linux x86_64.
+> Results may vary across different JS engines, hardware, and OS. Run `pnpm run bench` to verify on your own environment.
 
 ## License
 

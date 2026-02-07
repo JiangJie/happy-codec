@@ -34,6 +34,7 @@
  */
 
 import { Lazy } from '../internal/mod.ts';
+import { decodeByteString } from './bytestring.ts';
 import { dataSourceToBytes } from './helpers.ts';
 import type { DataSource } from './types.ts';
 
@@ -152,15 +153,7 @@ export function decodeBase64(data: string): Uint8Array<ArrayBuffer> {
  * @returns Decoded Uint8Array.
  */
 function decodeBase64Native(data: string): Uint8Array<ArrayBuffer> {
-    const latin1 = atob(data);
-    const { length } = latin1;
-    const bytes = new Uint8Array(length);
-
-    for (let i = 0; i < length; i++) {
-        bytes[i] = latin1.charCodeAt(i);
-    }
-
-    return bytes;
+    return decodeByteString(atob(data));
 }
 
 /**

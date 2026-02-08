@@ -3,7 +3,7 @@
  * @module bytestring
  */
 
-import { APPLY_CHUNK, assertInputIsString } from '../internal/mod.ts';
+import { assertInputIsString, typedArrayToString } from '../internal/mod.ts';
 import { dataSourceToBytes } from './helpers.ts';
 import type { DataSource } from './types.ts';
 
@@ -27,20 +27,7 @@ import type { DataSource } from './types.ts';
  */
 export function encodeByteString(data: DataSource): string {
     const bytes = dataSourceToBytes(data);
-    const len = bytes.byteLength;
-
-    if (len <= APPLY_CHUNK) {
-        return String.fromCharCode.apply(null, bytes as unknown as number[]);
-    }
-
-    let result = '';
-    for (let i = 0; i < len; i += APPLY_CHUNK) {
-        result += String.fromCharCode.apply(
-            null,
-            bytes.subarray(i, Math.min(i + APPLY_CHUNK, len)) as unknown as number[],
-        );
-    }
-    return result;
+    return typedArrayToString(bytes, bytes.byteLength);
 }
 
 /**

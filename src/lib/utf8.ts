@@ -3,7 +3,7 @@
  * @module utf8
  */
 
-import { APPLY_CHUNK, assertInputIsString, bufferSourceToBytes, Lazy } from '../internal/mod.ts';
+import { assertInputIsString, bufferSourceToBytes, Lazy, typedArrayToString } from '../internal/mod.ts';
 
 // #region Internal Variables
 /**
@@ -256,17 +256,7 @@ function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): st
         i += bytesNeeded;
     }
 
-    // Batch convert char codes to string in chunks to avoid call-stack overflow.
-    // Use subarray (not slice) — the view is only passed to fromCharCode, not retained.
-    let result = '';
-    for (let j = 0; j < pos; j += APPLY_CHUNK) {
-        result += String.fromCharCode.apply(
-            null,
-            charCodes.subarray(j, Math.min(j + APPLY_CHUNK, pos)) as unknown as number[],
-        );
-    }
-
-    return result;
+    return typedArrayToString(charCodes, pos);
 }
 
 // #endregion

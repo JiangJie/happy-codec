@@ -8,7 +8,16 @@ import { dataSourceToBytes } from './helpers.ts';
 import type { DataSource } from './types.ts';
 
 /**
+ * Maximum number of arguments passed to `String.fromCharCode.apply` per call.
+ * Kept well below engine call-stack limits (~65 536) to avoid `RangeError`.
+ */
+const APPLY_CHUNK = 8192;
+
+/**
  * Encodes a string or BufferSource to a byte string, with each byte as a character.
+ *
+ * Uses `String.fromCharCode.apply` in chunks of 8192 bytes for efficient
+ * batch conversion while staying safe from call-stack overflow.
  *
  * @param data - The string or BufferSource to encode.
  * @returns Byte string.
@@ -24,10 +33,18 @@ import type { DataSource } from './types.ts';
  */
 export function encodeByteString(data: DataSource): string {
     const bytes = dataSourceToBytes(data);
+    const len = bytes.byteLength;
+
+    if (len <= APPLY_CHUNK) {
+        return String.fromCharCode.apply(null, bytes as unknown as number[]);
+    }
 
     let result = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-        result += String.fromCharCode(bytes[i]);
+    for (let i = 0; i < len; i += APPLY_CHUNK) {
+        result += String.fromCharCode.apply(
+            null,
+            bytes.subarray(i, Math.min(i + APPLY_CHUNK, len)) as unknown as number[],
+        );
     }
     return result;
 }

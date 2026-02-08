@@ -8,6 +8,11 @@ import { assertInputIsString, bufferSourceToBytes, Lazy } from '../internal/mod.
 // #region Internal Variables
 
 /**
+ * Maximum number of code points passed to `String.fromCodePoint.apply` per call.
+ * Kept well below engine call-stack limits (~65 536) to avoid `RangeError`.
+ */
+const APPLY_CHUNK = 8192;
+/**
  * UTF-8 BOM (Byte Order Mark): U+FEFF
  */
 const BOM = '\ufeff';
@@ -161,16 +166,16 @@ function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): st
     const bytes = bufferSourceToBytes(data);
 
     const { fatal, ignoreBOM } = options;
-    let result = '';
+    const codePoints: number[] = [];
 
     /**
-     * Handle invalid byte sequence: throw if fatal, otherwise append replacement character.
+     * Handle invalid byte sequence: throw if fatal, otherwise collect replacement character.
      */
     function handleInvalid(): void {
         if (fatal) {
             throw new TypeError('The encoded data was not valid for encoding utf-8');
         }
-        result += String.fromCharCode(0xfffd);
+        codePoints.push(0xfffd);
     }
 
     const { length } = bytes;
@@ -180,7 +185,7 @@ function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): st
 
         // 1-byte character (ASCII: 0x00-0x7f)
         if (byte1 < 0x80) {
-            result += String.fromCharCode(byte1);
+            codePoints.push(byte1);
             i += 1;
             continue;
         }
@@ -242,8 +247,14 @@ function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): st
             continue;
         }
 
-        result += String.fromCodePoint(codePoint);
+        codePoints.push(codePoint);
         i += bytesNeeded;
+    }
+
+    // Batch convert code points to string in chunks to avoid call-stack overflow
+    let result = '';
+    for (let j = 0; j < codePoints.length; j += APPLY_CHUNK) {
+        result += String.fromCodePoint.apply(null, codePoints.slice(j, j + APPLY_CHUNK));
     }
 
     // Strip BOM if not ignored and present at the beginning

@@ -113,35 +113,39 @@ export function decodeUtf8(data: BufferSource, options?: TextDecoderOptions): st
  * @returns Encoded Uint8Array.
  */
 function encodeUtf8Fallback(input: string): Uint8Array<ArrayBuffer> {
-    const bytes: number[] = [];
+    const { length } = input;
+    // Each UTF-16 code unit produces at most 3 UTF-8 bytes
+    const bytes = new Uint8Array(length * 3);
+    let pos = 0;
 
-    for (let i = 0; i < input.length; i++) {
-        // Use codePointAt to get the complete Unicode code point, correctly handling surrogate pairs
-        const codePoint = input.codePointAt(i) as number;
+    for (let i = 0; i < length; i++) {
+        let codePoint = input.charCodeAt(i);
 
-        // Handle different Unicode ranges
         if (codePoint < 0x80) {
-            // 1 byte
-            bytes.push(codePoint);
+            // 1 byte (ASCII)
+            bytes[pos++] = codePoint;
         } else if (codePoint < 0x800) {
             // 2 bytes
-            bytes.push(0xc0 | (codePoint >> 6), 0x80 | (codePoint & 0x3f));
-        } else if (codePoint < 0x10000) {
-            // 3 bytes
-            bytes.push(0xe0 | (codePoint >> 12), 0x80 | ((codePoint >> 6) & 0x3f), 0x80 | (codePoint & 0x3f));
+            bytes[pos++] = 0xc0 | (codePoint >> 6);
+            bytes[pos++] = 0x80 | (codePoint & 0x3f);
+        } else if (codePoint < 0xd800 || codePoint >= 0xe000) {
+            // 3 bytes (normal BMP character, not a surrogate)
+            bytes[pos++] = 0xe0 | (codePoint >> 12);
+            bytes[pos++] = 0x80 | ((codePoint >> 6) & 0x3f);
+            bytes[pos++] = 0x80 | (codePoint & 0x3f);
         } else {
-            // 4 bytes (U+10000 and above), need to skip the second code unit of the surrogate pair
-            bytes.push(
-                0xf0 | (codePoint >> 18),
-                0x80 | ((codePoint >> 12) & 0x3f),
-                0x80 | ((codePoint >> 6) & 0x3f),
-                0x80 | (codePoint & 0x3f),
-            );
-            i++; // Skip the low surrogate of the surrogate pair
+            // Surrogate pair → 4-byte UTF-8
+            const lo = input.charCodeAt(++i);
+            codePoint = ((codePoint - 0xd800) << 10) + (lo - 0xdc00) + 0x10000;
+            bytes[pos++] = 0xf0 | (codePoint >> 18);
+            bytes[pos++] = 0x80 | ((codePoint >> 12) & 0x3f);
+            bytes[pos++] = 0x80 | ((codePoint >> 6) & 0x3f);
+            bytes[pos++] = 0x80 | (codePoint & 0x3f);
         }
     }
 
-    return new Uint8Array(bytes);
+    // Use slice (not subarray) to release the over-allocated buffer for GC
+    return bytes.slice(0, pos);
 }
 
 /**

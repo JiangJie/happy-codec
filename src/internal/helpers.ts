@@ -6,24 +6,25 @@
 /**
  * Converts BufferSource to Uint8Array.
  *
- * @param data - The BufferSource to convert.
+ * @param input - The BufferSource to convert.
  * @returns Uint8Array.
+ * @throws {TypeError} If the input is not an ArrayBuffer or ArrayBufferView.
  */
-export function bufferSourceToBytes(data: BufferSource): Uint8Array<ArrayBuffer> {
-    if (data instanceof Uint8Array) {
+export function bufferSourceToBytes(input: BufferSource): Uint8Array<ArrayBuffer> {
+    if (input instanceof Uint8Array) {
         // Safe: Uint8Array.prototype.buffer is always an ArrayBuffer
-        return data as Uint8Array<ArrayBuffer>;
+        return input as Uint8Array<ArrayBuffer>;
     }
 
-    if (data instanceof ArrayBuffer) {
-        return new Uint8Array(data);
+    if (input instanceof ArrayBuffer) {
+        return new Uint8Array(input);
     }
 
-    if (ArrayBuffer.isView(data)) {
-        return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+    if (ArrayBuffer.isView(input)) {
+        return new Uint8Array(input.buffer, input.byteOffset, input.byteLength);
     }
 
-    throw new TypeError(`BufferSource is not ArrayBuffer or ArrayBufferView`);
+    throw new TypeError('Input argument must be an ArrayBuffer or ArrayBufferView');
 }
 
 /**

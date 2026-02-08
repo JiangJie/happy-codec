@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import { decodeBase64, encodeBase64, encodeUtf8 } from '../src/mod.ts';
+import type { DecodeBase64Options, EncodeBase64Options } from '../src/mod.ts';
 
 test('encode/decode string to/from base64', () => {
     const data = 'happy-codec';
@@ -120,9 +121,132 @@ test('encodeBase64 supports DataSource types', () => {
     expect(encodeBase64(buffer)).toBe('SGVsbG8=');
 });
 
+describe('encodeBase64 with options', () => {
+    test('alphabet: base64url uses - and _ instead of + and /', () => {
+        // [0xfb, 0xef, 0xbf] encodes to '+++/' in standard base64
+        const data = new Uint8Array([0xfb, 0xef, 0xbf]);
+        const standard = encodeBase64(data);
+        const url = encodeBase64(data, { alphabet: 'base64url' });
+
+        expect(standard).toBe('+++/');
+        expect(url).toBe('---_');
+        expect(url).not.toContain('+');
+        expect(url).not.toContain('/');
+    });
+
+    test('omitPadding: true strips trailing = padding', () => {
+        // 1 byte -> 2 base64 chars + ==
+        expect(encodeBase64(new Uint8Array([65]), { omitPadding: true })).toBe('QQ');
+        // 2 bytes -> 3 base64 chars + =
+        expect(encodeBase64(new Uint8Array([65, 66]), { omitPadding: true })).toBe('QUI');
+        // 3 bytes -> 4 base64 chars, no padding needed
+        expect(encodeBase64(new Uint8Array([65, 66, 67]), { omitPadding: true })).toBe('QUJD');
+    });
+
+    test('omitPadding: false (default) keeps padding', () => {
+        expect(encodeBase64(new Uint8Array([65]))).toBe('QQ==');
+        expect(encodeBase64(new Uint8Array([65, 66]))).toBe('QUI=');
+    });
+
+    test('combined: base64url + omitPadding', () => {
+        const data = new Uint8Array([0xfb, 0xef]); // '++8=' in standard
+        const result = encodeBase64(data, { alphabet: 'base64url', omitPadding: true });
+        expect(result).toBe('--8');
+        expect(result).not.toContain('+');
+        expect(result).not.toContain('/');
+        expect(result).not.toContain('=');
+    });
+
+    test('empty input returns empty string regardless of options', () => {
+        expect(encodeBase64(new Uint8Array([]), { alphabet: 'base64url', omitPadding: true })).toBe('');
+    });
+});
+
+describe('decodeBase64 with options', () => {
+    test('alphabet: base64url decodes - and _ correctly', () => {
+        // Encode with base64url, then decode with base64url
+        const data = new Uint8Array([0xfb, 0xef, 0xbf]);
+        const encoded = encodeBase64(data, { alphabet: 'base64url' });
+        expect(encoded).toBe('---_');
+        const decoded = decodeBase64(encoded, { alphabet: 'base64url' });
+        expect(decoded).toEqual(data);
+    });
+
+    test('alphabet: base64url rejects + and / characters', () => {
+        // '+++/' is valid standard base64 but contains + and / which are invalid in base64url
+        expect(() => decodeBase64('+++/', { alphabet: 'base64url' })).toThrow(SyntaxError);
+    });
+
+    test('alphabet: base64 rejects - and _ characters', () => {
+        expect(() => decodeBase64('---_', { alphabet: 'base64' })).toThrow(SyntaxError);
+    });
+
+    test('lastChunkHandling: loose (default) accepts unpadded input', () => {
+        // 'QQ' without padding -> should decode to [65]
+        expect(decodeBase64('QQ')).toEqual(new Uint8Array([65]));
+        expect(decodeBase64('QUI')).toEqual(new Uint8Array([65, 66]));
+    });
+
+    test('lastChunkHandling: strict throws on missing padding', () => {
+        expect(() => decodeBase64('QQ', { lastChunkHandling: 'strict' })).toThrow('The base64 input terminates with a single character, excluding padding (=)');
+        expect(() => decodeBase64('QUI', { lastChunkHandling: 'strict' })).toThrow('The base64 input terminates with a single character, excluding padding (=)');
+    });
+
+    test('lastChunkHandling: strict accepts correctly padded input', () => {
+        expect(decodeBase64('QQ==', { lastChunkHandling: 'strict' })).toEqual(new Uint8Array([65]));
+        expect(decodeBase64('QUI=', { lastChunkHandling: 'strict' })).toEqual(new Uint8Array([65, 66]));
+        expect(decodeBase64('QUJD', { lastChunkHandling: 'strict' })).toEqual(new Uint8Array([65, 66, 67]));
+    });
+
+    test('lastChunkHandling: strict validates padding bits are zero', () => {
+        // 'QR==' — 'R' is index 17 (0b010001), lower 4 bits = 0b0001 != 0
+        expect(() => decodeBase64('QR==', { lastChunkHandling: 'strict' })).toThrow('The base64 input terminates with non-zero padding bits');
+        // 'QUJ=' — 'J' is index 9 (0b001001), lower 2 bits = 0b01 != 0
+        expect(() => decodeBase64('QUJ=', { lastChunkHandling: 'strict' })).toThrow('The base64 input terminates with non-zero padding bits');
+    });
+
+    test('lastChunkHandling: strict validates padding bits with base64url', () => {
+        // Same validation with base64url alphabet
+        // 'QR==' with base64url: 'R' is index 17, lower 4 bits != 0
+        expect(() => decodeBase64('QR==', { alphabet: 'base64url', lastChunkHandling: 'strict' })).toThrow('The base64 input terminates with non-zero padding bits');
+        // 'QUJ=' with base64url: 'J' is index 9, lower 2 bits != 0
+        expect(() => decodeBase64('QUJ=', { alphabet: 'base64url', lastChunkHandling: 'strict' })).toThrow('The base64 input terminates with non-zero padding bits');
+    });
+
+    test('lastChunkHandling: stop-before-partial ignores incomplete chunk', () => {
+        // 'QUJDQQ' = 4 full chars + 2 extra unpadded chars
+        // Should only decode the first 4 chars ('QUJD' = [65,66,67])
+        expect(decodeBase64('QUJDQQ', { lastChunkHandling: 'stop-before-partial' })).toEqual(new Uint8Array([65, 66, 67]));
+    });
+
+    test('lastChunkHandling: stop-before-partial decodes padded final chunks', () => {
+        // 'QUJDQQ==' has proper padding -> decode all
+        expect(decodeBase64('QUJDQQ==', { lastChunkHandling: 'stop-before-partial' })).toEqual(new Uint8Array([65, 66, 67, 65]));
+    });
+
+    test('round-trip with base64url alphabet', () => {
+        const data = new Uint8Array(256);
+        for (let i = 0; i < 256; i++) data[i] = i;
+        const encoded = encodeBase64(data, { alphabet: 'base64url' });
+        const decoded = decodeBase64(encoded, { alphabet: 'base64url' });
+        expect(decoded).toEqual(data);
+    });
+
+    test('round-trip with omitPadding + loose decoding', () => {
+        const data = new Uint8Array([1, 2]);
+        const encoded = encodeBase64(data, { omitPadding: true });
+        const decoded = decodeBase64(encoded);
+        expect(decoded).toEqual(data);
+    });
+
+    test('empty string returns empty array regardless of options', () => {
+        expect(decodeBase64('', { alphabet: 'base64url', lastChunkHandling: 'strict' })).toEqual(new Uint8Array([]));
+    });
+});
+
 describe('Base64 decodeBase64 fallback implementation', () => {
-    let decodeBase64Fallback: (data: string) => Uint8Array<ArrayBuffer>;
-    let encodeBase64Fallback: (data: string | BufferSource) => string;
+    let decodeBase64Fallback: (data: string, options?: DecodeBase64Options) => Uint8Array<ArrayBuffer>;
+    let encodeBase64Fallback: (data: string | BufferSource, options?: EncodeBase64Options) => string;
     let originalFromBase64: typeof Uint8Array.fromBase64;
     let originalToBase64: typeof Uint8Array.prototype.toBase64;
 
@@ -260,5 +384,63 @@ describe('Base64 decodeBase64 fallback implementation', () => {
         const encoded = encodeBase64Fallback(allBytes);
         const decoded = decodeBase64Fallback(encoded);
         expect(decoded).toEqual(allBytes);
+    });
+
+    // Options tests for fallback path
+    test('fallback: encodeBase64 with base64url alphabet', () => {
+        const data = new Uint8Array([0xfb, 0xef, 0xbf]);
+        const standard = encodeBase64Fallback(data);
+        const url = encodeBase64Fallback(data, { alphabet: 'base64url' });
+        expect(standard).toBe('+++/');
+        expect(url).toBe('---_');
+    });
+
+    test('fallback: encodeBase64 with omitPadding', () => {
+        expect(encodeBase64Fallback(new Uint8Array([65]), { omitPadding: true })).toBe('QQ');
+        expect(encodeBase64Fallback(new Uint8Array([65, 66]), { omitPadding: true })).toBe('QUI');
+        expect(encodeBase64Fallback(new Uint8Array([65, 66, 67]), { omitPadding: true })).toBe('QUJD');
+    });
+
+    test('fallback: decodeBase64 with base64url alphabet', () => {
+        const data = new Uint8Array([0xfb, 0xef, 0xbf]);
+        const encoded = encodeBase64Fallback(data, { alphabet: 'base64url' });
+        expect(encoded).toBe('---_');
+        const decoded = decodeBase64Fallback(encoded, { alphabet: 'base64url' });
+        expect(decoded).toEqual(data);
+    });
+
+    test('fallback: decodeBase64 base64url rejects + and /', () => {
+        expect(() => decodeBase64Fallback('+++/', { alphabet: 'base64url' })).toThrow(SyntaxError);
+    });
+
+    test('fallback: lastChunkHandling strict throws on missing padding', () => {
+        expect(() => decodeBase64Fallback('QQ', { lastChunkHandling: 'strict' })).toThrow('The base64 input terminates with a single character, excluding padding (=)');
+        expect(() => decodeBase64Fallback('QUI', { lastChunkHandling: 'strict' })).toThrow('The base64 input terminates with a single character, excluding padding (=)');
+    });
+
+    test('fallback: lastChunkHandling strict accepts padded input', () => {
+        expect(decodeBase64Fallback('QQ==', { lastChunkHandling: 'strict' })).toEqual(new Uint8Array([65]));
+        expect(decodeBase64Fallback('QUI=', { lastChunkHandling: 'strict' })).toEqual(new Uint8Array([65, 66]));
+    });
+
+    test('fallback: lastChunkHandling strict validates padding bits', () => {
+        expect(() => decodeBase64Fallback('QR==', { lastChunkHandling: 'strict' })).toThrow('The base64 input terminates with non-zero padding bits');
+        expect(() => decodeBase64Fallback('QUJ=', { lastChunkHandling: 'strict' })).toThrow('The base64 input terminates with non-zero padding bits');
+    });
+
+    test('fallback: lastChunkHandling stop-before-partial ignores incomplete chunk', () => {
+        expect(decodeBase64Fallback('QUJDQQ', { lastChunkHandling: 'stop-before-partial' })).toEqual(new Uint8Array([65, 66, 67]));
+    });
+
+    test('fallback: lastChunkHandling stop-before-partial decodes padded chunks', () => {
+        expect(decodeBase64Fallback('QUJDQQ==', { lastChunkHandling: 'stop-before-partial' })).toEqual(new Uint8Array([65, 66, 67, 65]));
+    });
+
+    test('fallback: round-trip with base64url + omitPadding', () => {
+        const data = new Uint8Array(256);
+        for (let i = 0; i < 256; i++) data[i] = i;
+        const encoded = encodeBase64Fallback(data, { alphabet: 'base64url', omitPadding: true });
+        const decoded = decodeBase64Fallback(encoded, { alphabet: 'base64url' });
+        expect(decoded).toEqual(data);
     });
 });

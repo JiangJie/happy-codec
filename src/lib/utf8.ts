@@ -57,9 +57,9 @@ export function encodeUtf8(input: string): Uint8Array<ArrayBuffer> {
 
     // Use fallback for small inputs (faster due to native API call overhead)
     // or when TextEncoder is not available
-    return typeof TextEncoder !== 'function' || input.length <= ENCODE_FALLBACK_THRESHOLD
-        ? encodeUtf8Fallback(input)
-        : encoder.force().encode(input);
+    return typeof TextEncoder === 'function' && input.length > ENCODE_FALLBACK_THRESHOLD
+        ? encoder.force().encode(input)
+        : encodeUtf8Fallback(input);
 }
 
 /**
@@ -100,15 +100,14 @@ export function decodeUtf8(data: BufferSource, options?: TextDecoderOptions): st
 
     // Use fallback for small inputs (faster due to native API call overhead)
     // or when TextDecoder is not available
-    // get byte length for threshold check
-    if (typeof TextDecoder !== 'function' || data.byteLength <= DECODE_FALLBACK_THRESHOLD) {
-        return decodeUtf8Fallback(data, { fatal, ignoreBOM });
+    if (typeof TextDecoder === 'function' && data.byteLength > DECODE_FALLBACK_THRESHOLD) {
+        const decoderInstance = fatal
+            ? (ignoreBOM ? fatalDecoderIgnoreBOM : fatalDecoder)
+            : (ignoreBOM ? decoderIgnoreBOM : decoder);
+        return decoderInstance.force().decode(data);
     }
 
-    const decoderInstance = fatal
-        ? (ignoreBOM ? fatalDecoderIgnoreBOM : fatalDecoder)
-        : (ignoreBOM ? decoderIgnoreBOM : decoder);
-    return decoderInstance.force().decode(data);
+    return decodeUtf8Fallback(data, { fatal, ignoreBOM });
 }
 
 // #region Pure JS Implementation
@@ -116,15 +115,15 @@ export function decodeUtf8(data: BufferSource, options?: TextDecoderOptions): st
 /**
  * Pure JS implementation of UTF-8 encoding.
  *
- * @param data - The string to encode.
+ * @param input - The string to encode.
  * @returns Encoded Uint8Array.
  */
-function encodeUtf8Fallback(data: string): Uint8Array<ArrayBuffer> {
+function encodeUtf8Fallback(input: string): Uint8Array<ArrayBuffer> {
     const bytes: number[] = [];
 
-    for (let i = 0; i < data.length; i++) {
+    for (let i = 0; i < input.length; i++) {
         // Use codePointAt to get the complete Unicode code point, correctly handling surrogate pairs
-        const codePoint = data.codePointAt(i) as number;
+        const codePoint = input.codePointAt(i) as number;
 
         // Handle different Unicode ranges
         if (codePoint < 0x80) {
@@ -179,9 +178,9 @@ function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): st
     while (i < length) {
         const byte1 = bytes[i];
 
-        // 1-byte character (ASCII: 0x00-0x7F)
+        // 1-byte character (ASCII: 0x00-0x7f)
         if (byte1 < 0x80) {
-            result += String.fromCodePoint(byte1);
+            result += String.fromCharCode(byte1);
             i += 1;
             continue;
         }
@@ -209,7 +208,7 @@ function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): st
             if (byte1 === 0xf0) lowerBoundary = 0x90;
             if (byte1 === 0xf4) upperBoundary = 0x8f;
         } else {
-            // Invalid leading byte (0x80-0xC1, 0xF5-0xFF)
+            // Invalid leading byte (0x80-0xc1, 0xf5-0xff)
             handleInvalid();
             i += 1;
             continue;

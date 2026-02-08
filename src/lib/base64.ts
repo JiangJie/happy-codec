@@ -34,15 +34,15 @@ import type { DataSource } from './types.ts';
 
 /**
  * Threshold for using native `Uint8Array.prototype.toBase64`.
- * For small inputs, pure JS is faster than native API due to call overhead.
+ * For small inputs (<= 21 bytes), pure JS is faster due to native call overhead.
  */
-const ENCODE_NATIVE_THRESHOLD = 21; // byteLength
+const ENCODE_FALLBACK_THRESHOLD = 21; // byteLength
 
 /**
  * Threshold for using native `Uint8Array.fromBase64`.
- * For small inputs, pure JS is faster than native API due to call overhead.
+ * For small inputs (<= 88 chars), pure JS is faster due to native call overhead.
  */
-const DECODE_NATIVE_THRESHOLD = 88; // data.length (base64 string length, ≈66 bytes)
+const DECODE_FALLBACK_THRESHOLD = 88; // base64.length (base64 string length, ≈66 bytes)
 
 /**
  * Common prefix shared by both base64 alphabets (first 62 characters).
@@ -58,17 +58,6 @@ const base64abc = `${commonChars}+/`.split('');
  * Base64url character array (RFC 4648 §5): uses `-` and `_` instead of `+` and `/`.
  */
 const base64urlAbc = `${commonChars}-_`.split('');
-
-/**
- * Build a 256-byte lookup table from a base64 character array.
- */
-function buildLookup(abc: string[]): Uint8Array {
-    const bytes = new Uint8Array(256);
-    for (let i = 0; i < abc.length; i++) {
-        bytes[abc[i].charCodeAt(0)] = i;
-    }
-    return bytes;
-}
 
 /**
  * Standard base64 character lookup table (lazily initialized).
@@ -166,7 +155,7 @@ export interface DecodeBase64Options {
 export function encodeBase64(data: DataSource, options?: EncodeBase64Options): string {
     const bytes = dataSourceToBytes(data);
 
-    return typeof bytes.toBase64 === 'function' && bytes.byteLength >= ENCODE_NATIVE_THRESHOLD
+    return typeof bytes.toBase64 === 'function' && bytes.byteLength > ENCODE_FALLBACK_THRESHOLD
         ? bytes.toBase64(options)
         : encodeBase64Fallback(bytes, options);
 }
@@ -202,7 +191,7 @@ export function encodeBase64(data: DataSource, options?: EncodeBase64Options): s
  * ```
  */
 export function decodeBase64(base64: string, options?: DecodeBase64Options): Uint8Array<ArrayBuffer> {
-    return typeof Uint8Array.fromBase64 === 'function' && base64.length >= DECODE_NATIVE_THRESHOLD
+    return typeof Uint8Array.fromBase64 === 'function' && base64.length > DECODE_FALLBACK_THRESHOLD
         ? Uint8Array.fromBase64(base64, options)
         : decodeBase64Fallback(base64, options);
 }
@@ -360,6 +349,19 @@ function decodeBase64Fallback(base64: string, options?: DecodeBase64Options): Ui
         bytes[pos] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
     }
 
+    return bytes;
+}
+
+/**
+ * Build a 256-byte lookup table from a base64 character array.
+ */
+function buildLookup(abc: string[]): Uint8Array {
+    // 128 entries covers all ASCII charCodes.
+    // Safe because input is pre-validated by BASE64_RE / BASE64URL_RE.
+    const bytes = new Uint8Array(128);
+    for (let i = 0; i < abc.length; i++) {
+        bytes[abc[i].charCodeAt(0)] = i;
+    }
     return bytes;
 }
 

@@ -34,13 +34,13 @@ const encodeTable = Lazy(() =>
 
 /**
  * Pre-computed charCode-to-nibble decode table.
- * Valid hex chars map to 0-15, everything else maps to 0xFF.
+ * Valid hex chars map to 0-15, everything else maps to 0xff.
  */
 const decodeTable = Lazy(() => {
     // 128 entries covers all ASCII charCodes (max hex char 'f' = 0x66 = 102).
-    // Fill with 0xFF as invalid marker — valid nibbles are 0-15,
-    // so (hi | lo) > 0x0F detects any non-hex character.
-    const table = new Uint8Array(128).fill(0xFF);
+    // Fill with 0xff as invalid marker — valid nibbles are 0-15,
+    // so (hi | lo) > 0x0f detects any non-hex character.
+    const table = new Uint8Array(128).fill(0xff);
     for (let i = 0; i < 10; i++) table[0x30 + i] = i;       // '0'-'9'
     for (let i = 0; i < 6; i++) table[0x41 + i] = 10 + i;   // 'A'-'F'
     for (let i = 0; i < 6; i++) table[0x61 + i] = 10 + i;   // 'a'-'f'
@@ -140,7 +140,7 @@ function decodeHexFallback(hex: string): Uint8Array<ArrayBuffer> {
     for (let i = 0; i < length; i += 2) {
         const hi = table[hex.charCodeAt(i)];
         const lo = table[hex.charCodeAt(i + 1)];
-        if ((hi | lo) > 0x0F) {
+        if ((hi | lo) > 0x0f) {
             throwInvalidHex();
         }
         bytes[i >> 1] = (hi << 4) | lo;

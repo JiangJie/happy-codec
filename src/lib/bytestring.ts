@@ -52,7 +52,7 @@ export function encodeByteString(data: DataSource): string {
 /**
  * Decodes a byte string to Uint8Array, with each character's charCode as a byte.
  *
- * @param data - The byte string to decode.
+ * @param byteString - The byte string to decode.
  * @returns Uint8Array.
  * @throws {TypeError} If the input is not a string.
  * @throws {SyntaxError} If string contains characters with charCode above 0xFF.
@@ -63,14 +63,14 @@ export function encodeByteString(data: DataSource): string {
  * console.log(bytes); // Uint8Array [72, 101, 108, 108, 111]
  * ```
  */
-export function decodeByteString(data: string): Uint8Array<ArrayBuffer> {
-    assertInputIsString(data);
+export function decodeByteString(byteString: string): Uint8Array<ArrayBuffer> {
+    assertInputIsString(byteString);
 
-    const { length } = data;
+    const { length } = byteString;
     const bytes = new Uint8Array(length);
 
     for (let i = 0; i < length; i++) {
-        const charCode = data.charCodeAt(i);
+        const charCode = byteString.charCodeAt(i);
 
         if (charCode > 0xFF) {
             throw new SyntaxError('Found a character that cannot be part of a valid byte string');

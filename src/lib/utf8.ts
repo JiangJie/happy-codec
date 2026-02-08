@@ -42,7 +42,7 @@ const fatalDecoderIgnoreBOM = Lazy(() => new TextDecoder('utf-8', { fatal: true,
  * Uses pure JS for small strings (length <= 21, up to 63 bytes) and native `TextEncoder` for larger ones.
  * Falls back to pure JS when `TextEncoder` is not available.
  *
- * @param data - The string data to encode.
+ * @param input - The string data to encode.
  * @returns Encoded `Uint8Array`.
  * @throws {TypeError} If the input is not a string.
  * @since 1.0.0
@@ -52,14 +52,14 @@ const fatalDecoderIgnoreBOM = Lazy(() => new TextDecoder('utf-8', { fatal: true,
  * console.log(encoded); // Uint8Array [228, 189, 160, 229, 165, 189]
  * ```
  */
-export function encodeUtf8(data: string): Uint8Array<ArrayBuffer> {
-    assertInputIsString(data);
+export function encodeUtf8(input: string): Uint8Array<ArrayBuffer> {
+    assertInputIsString(input);
 
     // Use fallback for small inputs (faster due to native API call overhead)
     // or when TextEncoder is not available
-    return typeof TextEncoder !== 'function' || data.length <= ENCODE_FALLBACK_THRESHOLD
-        ? encodeUtf8Fallback(data)
-        : encoder.force().encode(data);
+    return typeof TextEncoder !== 'function' || input.length <= ENCODE_FALLBACK_THRESHOLD
+        ? encodeUtf8Fallback(input)
+        : encoder.force().encode(input);
 }
 
 /**

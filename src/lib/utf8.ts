@@ -7,11 +7,6 @@ import { APPLY_CHUNK, assertInputIsString, bufferSourceToBytes, Lazy } from '../
 
 // #region Internal Variables
 /**
- * UTF-8 BOM (Byte Order Mark): U+FEFF
- */
-const BOM = '\ufeff';
-
-/**
  * Threshold for using fallback implementation.
  * For small inputs, pure JS is faster than native API due to call overhead.
  *
@@ -173,7 +168,11 @@ function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): st
     }
 
     const { length } = bytes;
-    let i = 0;
+
+    // Skip BOM at byte level: UTF-8 BOM is 0xef 0xbb 0xbf
+    let i = (!ignoreBOM && length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf)
+        ? 3
+        : 0;
     while (i < length) {
         const byte1 = bytes[i];
 
@@ -249,11 +248,6 @@ function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): st
     let result = '';
     for (let j = 0; j < codePoints.length; j += APPLY_CHUNK) {
         result += String.fromCodePoint.apply(null, codePoints.slice(j, j + APPLY_CHUNK));
-    }
-
-    // Strip BOM if not ignored and present at the beginning
-    if (!ignoreBOM && result.startsWith(BOM)) {
-        return result.slice(1);
     }
 
     return result;

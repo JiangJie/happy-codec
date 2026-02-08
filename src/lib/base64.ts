@@ -26,7 +26,7 @@ declare global {
     }
 }
 
-import { Lazy } from '../internal/mod.ts';
+import { assertInputIsString, Lazy } from '../internal/mod.ts';
 import { dataSourceToBytes } from './helpers.ts';
 import type { DataSource } from './types.ts';
 
@@ -106,6 +106,8 @@ export function encodeBase64(data: DataSource): string {
  *
  * @param data - Base64 encoded string.
  * @returns Decoded Uint8Array.
+ * @throws {TypeError} If the input is not a string.
+ * @throws {SyntaxError} If the input contains invalid base64 characters or has invalid length.
  * @since 1.0.0
  * @example
  * ```ts
@@ -172,14 +174,22 @@ function encodeBase64Fallback(bytes: Uint8Array<ArrayBuffer>): string {
  *
  * @param data - Base64 encoded string.
  * @returns Decoded Uint8Array.
- * @throws {Error} If length % 4 === 1 (invalid base64 length).
+ * @throws {TypeError} If the input is not a string.
+ * @throws {SyntaxError} If length % 4 === 1 or contains invalid characters.
  */
 function decodeBase64Fallback(data: string): Uint8Array<ArrayBuffer> {
+    assertInputIsString(data);
+
     const { length } = data;
 
     // Invalid: length % 4 === 1 cannot form valid base64
     if (length % 4 === 1) {
-        throw new Error('The string to be decoded is not correctly encoded');
+        throw new SyntaxError('The base64 input terminates with a single character, excluding padding (=)');
+    }
+
+    // Validate characters: only A-Z, a-z, 0-9, +, /, = allowed
+    if (length > 0 && !/^[A-Za-z0-9+/]*={0,2}$/.test(data)) {
+        throw new SyntaxError('Found a character that cannot be part of a valid base64 string');
     }
 
     // Calculate byte length: (length * 3 / 4), accounting for padding

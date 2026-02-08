@@ -220,9 +220,17 @@ describe('Base64 decodeBase64 fallback implementation', () => {
 
     test('decodeBase64 throws on invalid length (length % 4 === 1) via fallback', () => {
         // length 1, 5, 9 are invalid
-        expect(() => decodeBase64Fallback('a')).toThrow('The string to be decoded is not correctly encoded');
-        expect(() => decodeBase64Fallback('abcde')).toThrow('The string to be decoded is not correctly encoded');
-        expect(() => decodeBase64Fallback('abcdefghi')).toThrow('The string to be decoded is not correctly encoded');
+        expect(() => decodeBase64Fallback('a')).toThrow(SyntaxError);
+        expect(() => decodeBase64Fallback('a')).toThrow('The base64 input terminates with a single character, excluding padding (=)');
+        expect(() => decodeBase64Fallback('abcde')).toThrow(SyntaxError);
+        expect(() => decodeBase64Fallback('abcdefghi')).toThrow(SyntaxError);
+    });
+
+    test('decodeBase64 throws on invalid characters via fallback', () => {
+        expect(() => decodeBase64Fallback('@#$%')).toThrow(SyntaxError);
+        expect(() => decodeBase64Fallback('@#$%')).toThrow('Found a character that cannot be part of a valid base64 string');
+        expect(() => decodeBase64Fallback('AA!A')).toThrow(SyntaxError);
+        expect(() => decodeBase64Fallback('====')).toThrow(SyntaxError);
     });
 
     test('decodeBase64 handles non-padded base64 (length % 4 !== 0) via fallback', () => {

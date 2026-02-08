@@ -3,6 +3,7 @@
  * @module bytestring
  */
 
+import { assertInputIsString } from '../internal/mod.ts';
 import { dataSourceToBytes } from './helpers.ts';
 import type { DataSource } from './types.ts';
 
@@ -36,7 +37,8 @@ export function encodeByteString(data: DataSource): string {
  *
  * @param data - The byte string to decode.
  * @returns Uint8Array.
- * @throws {Error} If string contains characters with charCode above 0xFF.
+ * @throws {TypeError} If the input is not a string.
+ * @throws {SyntaxError} If string contains characters with charCode above 0xFF.
  * @since 1.0.0
  * @example
  * ```ts
@@ -45,6 +47,8 @@ export function encodeByteString(data: DataSource): string {
  * ```
  */
 export function decodeByteString(data: string): Uint8Array<ArrayBuffer> {
+    assertInputIsString(data);
+
     const { length } = data;
     const bytes = new Uint8Array(length);
 
@@ -52,7 +56,7 @@ export function decodeByteString(data: string): Uint8Array<ArrayBuffer> {
         const charCode = data.charCodeAt(i);
 
         if (charCode > 0xFF) {
-            throw new Error('Invalid byte string: contains characters above 0xFF');
+            throw new SyntaxError('Found a character that cannot be part of a valid byte string');
         }
 
         bytes[i] = charCode;

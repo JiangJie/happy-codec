@@ -34,9 +34,9 @@ test('encodeByteString converts string to byte string', () => {
 });
 
 test('decodeByteString throws on characters above 0xFF', () => {
-    expect(() => decodeByteString('你好')).toThrow('Invalid byte string: contains characters above 0xFF');
-    expect(() => decodeByteString('abc你')).toThrow('Invalid byte string: contains characters above 0xFF');
-    expect(() => decodeByteString('\u0100')).toThrow('Invalid byte string: contains characters above 0xFF');
+    expect(() => decodeByteString('你好')).toThrow('Found a character that cannot be part of a valid byte string');
+    expect(() => decodeByteString('abc你')).toThrow('Found a character that cannot be part of a valid byte string');
+    expect(() => decodeByteString('\u0100')).toThrow('Found a character that cannot be part of a valid byte string');
 });
 
 test('encodeByteString handles unicode string', () => {

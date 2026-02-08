@@ -3,7 +3,7 @@
  * @module utf8
  */
 
-import { bufferSourceToBytes, Lazy } from '../internal/mod.ts';
+import { assertInputIsString, bufferSourceToBytes, Lazy } from '../internal/mod.ts';
 
 // #region Internal Variables
 
@@ -44,6 +44,7 @@ const fatalDecoderIgnoreBOM = Lazy(() => new TextDecoder('utf-8', { fatal: true,
  *
  * @param data - The string data to encode.
  * @returns Encoded `Uint8Array`.
+ * @throws {TypeError} If the input is not a string.
  * @since 1.0.0
  * @example
  * ```ts
@@ -52,6 +53,8 @@ const fatalDecoderIgnoreBOM = Lazy(() => new TextDecoder('utf-8', { fatal: true,
  * ```
  */
 export function encodeUtf8(data: string): Uint8Array<ArrayBuffer> {
+    assertInputIsString(data);
+
     // Use fallback for small inputs (faster due to native API call overhead)
     // or when TextEncoder is not available
     return typeof TextEncoder !== 'function' || data.length <= ENCODE_FALLBACK_THRESHOLD
@@ -156,13 +159,10 @@ function encodeUtf8Fallback(data: string): Uint8Array<ArrayBuffer> {
  * @returns Decoded string.
  */
 function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): string {
-    const { fatal, ignoreBOM } = options;
-
     const bytes = bufferSourceToBytes(data);
-    const { length } = bytes;
 
-    let str = '';
-    let i = 0;
+    const { fatal, ignoreBOM } = options;
+    let result = '';
 
     /**
      * Handle invalid byte sequence: throw if fatal, otherwise append replacement character.
@@ -171,15 +171,17 @@ function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): st
         if (fatal) {
             throw new TypeError('The encoded data was not valid for encoding utf-8');
         }
-        str += String.fromCharCode(0xfffd);
+        result += String.fromCharCode(0xfffd);
     }
 
+    const { length } = bytes;
+    let i = 0;
     while (i < length) {
         const byte1 = bytes[i];
 
         // 1-byte character (ASCII: 0x00-0x7F)
         if (byte1 < 0x80) {
-            str += String.fromCodePoint(byte1);
+            result += String.fromCodePoint(byte1);
             i += 1;
             continue;
         }
@@ -241,16 +243,16 @@ function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): st
             continue;
         }
 
-        str += String.fromCodePoint(codePoint);
+        result += String.fromCodePoint(codePoint);
         i += bytesNeeded;
     }
 
     // Strip BOM if not ignored and present at the beginning
-    if (!ignoreBOM && str.startsWith(BOM)) {
-        return str.slice(1);
+    if (!ignoreBOM && result.startsWith(BOM)) {
+        return result.slice(1);
     }
 
-    return str;
+    return result;
 }
 
 // #endregion

@@ -103,13 +103,15 @@ describe('Hex fallback implementation', () => {
     });
 
     test('decodeHex fallback throws on odd-length string', () => {
-        expect(() => decodeHexFallback('f')).toThrow('Invalid hex string: length must be even');
-        expect(() => decodeHexFallback('fff')).toThrow('Invalid hex string: length must be even');
+        expect(() => decodeHexFallback('f')).toThrow(SyntaxError);
+        expect(() => decodeHexFallback('f')).toThrow('Input string must contain hex characters in even length');
+        expect(() => decodeHexFallback('fff')).toThrow(SyntaxError);
     });
 
     test('decodeHex fallback throws on non-hex characters', () => {
-        expect(() => decodeHexFallback('0g')).toThrow('Invalid hex string: contains non-hex characters');
-        expect(() => decodeHexFallback('zz')).toThrow('Invalid hex string: contains non-hex characters');
+        expect(() => decodeHexFallback('0g')).toThrow(SyntaxError);
+        expect(() => decodeHexFallback('0g')).toThrow('Input string must contain hex characters in even length');
+        expect(() => decodeHexFallback('zz')).toThrow(SyntaxError);
     });
 
     test('hex fallback round-trip conversion', () => {

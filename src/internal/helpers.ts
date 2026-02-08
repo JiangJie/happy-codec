@@ -25,3 +25,15 @@ export function bufferSourceToBytes(data: BufferSource): Uint8Array<ArrayBuffer>
 
     throw new TypeError(`BufferSource is not ArrayBuffer or ArrayBufferView`);
 }
+
+/**
+ * Asserts that the input is a string.
+ *
+ * @param input - The value to check.
+ * @throws {TypeError} If the input is not a string.
+ */
+export function assertInputIsString(input: string): void {
+    if (typeof input !== 'string') {
+        throw new TypeError('Input argument must be a string');
+    }
+}

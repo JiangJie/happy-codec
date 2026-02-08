@@ -13,6 +13,7 @@ declare global {
     }
 }
 
+import { assertInputIsString } from '../internal/mod.ts';
 import { dataSourceToBytes } from './helpers.ts';
 import type { DataSource } from './types.ts';
 
@@ -61,8 +62,8 @@ export function encodeHex(data: DataSource): string {
  *
  * @param hex - Hexadecimal string.
  * @returns Decoded Uint8Array.
- * @throws {TypeError} If native `fromHex` is used and input is invalid.
- * @throws {Error} If fallback is used and length is odd or contains non-hex characters.
+ * @throws {TypeError} If the input is not a string.
+ * @throws {SyntaxError} If length is odd or contains non-hex characters.
  * @since 1.0.0
  * @example
  * ```ts
@@ -93,15 +94,14 @@ function encodeHexFallback(bytes: Uint8Array<ArrayBuffer>): string {
  *
  * @param hex - Hexadecimal string.
  * @returns Decoded Uint8Array.
- * @throws {Error} If length is odd or contains non-hex characters.
+ * @throws {TypeError} If the input is not a string.
+ * @throws {SyntaxError} If length is odd or contains non-hex characters.
  */
 function decodeHexFallback(hex: string): Uint8Array<ArrayBuffer> {
-    if (hex.length % 2 !== 0) {
-        throw new Error('Invalid hex string: length must be even');
-    }
+    assertInputIsString(hex);
 
-    if (/[^0-9a-fA-F]/.test(hex)) {
-        throw new Error('Invalid hex string: contains non-hex characters');
+    if (hex.length % 2 !== 0 || /[^0-9a-fA-F]/.test(hex)) {
+        throw new SyntaxError('Input string must contain hex characters in even length');
     }
 
     const bytes = new Uint8Array(hex.length / 2);

@@ -62,6 +62,30 @@ test('hex round-trip conversion with large data', () => {
     expect(result).toEqual(original);
 });
 
+test('decodeHex at fallback threshold boundary (128 hex chars = 64 bytes)', () => {
+    const original = new Uint8Array(64);
+    for (let i = 0; i < 64; i++) original[i] = i & 0xFF;
+    const hex = encodeHex(original);
+    expect(hex).toHaveLength(128);
+    expect(decodeHex(hex)).toEqual(original);
+});
+
+test('decodeHex above fallback threshold (130 hex chars = 65 bytes)', () => {
+    const original = new Uint8Array(65);
+    for (let i = 0; i < 65; i++) original[i] = i & 0xFF;
+    const hex = encodeHex(original);
+    expect(hex).toHaveLength(130);
+    expect(decodeHex(hex)).toEqual(original);
+});
+
+test('hex round-trip with large data above native threshold', () => {
+    const original = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) original[i] = i & 0xFF;
+    const hex = encodeHex(original);
+    expect(hex).toHaveLength(512);
+    expect(decodeHex(hex)).toEqual(original);
+});
+
 describe('Hex fallback implementation', () => {
     let encodeHexFallback: (data: string | BufferSource) => string;
     let decodeHexFallback: (hex: string) => Uint8Array<ArrayBuffer>;

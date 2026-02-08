@@ -1,14 +1,13 @@
 /**
  * Hex encoding/decoding benchmark.
- * Compares happy-codec fallback implementation with native APIs.
+ * Compares lookup-table fallback with native APIs.
  *
  * **Encoding (`encodeHex`)**:
- * - Native `toHex()` wins at all sizes (19x-40x faster).
- * - No threshold needed — always prefer native.
+ * - Native `toHex()` wins at all sizes — no threshold needed, always prefer native.
  *
  * **Decoding (`decodeHex`)**:
- * - Native `fromHex()` wins at >= 22 hex chars (11 bytes).
- * - Below 22 hex chars, pure JS parseInt loop is faster due to call overhead.
+ * - Fallback (lookup table) wins at <= 128 hex chars (64 bytes).
+ * - Native `fromHex()` wins at > 128 hex chars.
  *
  * Crossover points below (sizes) were determined under:
  *   Node.js v25.6.0, AMD EPYC 7K83, Linux x86_64.
@@ -57,7 +56,7 @@ encodeSizes.forEach((size, i) => {
 // Hex Decode - fallback vs native fromHex
 // ============================================================================
 
-const decodeSizes = [18, 20, 22, 24];
+const decodeSizes = [128, 130];
 
 const decodeHexStrings = decodeSizes.map(size => {
     const bytes = new Uint8Array(size / 2);

@@ -13,17 +13,39 @@ declare global {
     }
 }
 
-import { assertInputIsString } from '../internal/mod.ts';
+import { assertInputIsString, Lazy } from '../internal/mod.ts';
 import { dataSourceToBytes } from './helpers.ts';
 import type { DataSource } from './types.ts';
 
 // #region Internal Variables
 
 /**
- * Threshold (in hex string length) for using native `Uint8Array.fromHex`.
- * For small inputs, pure JS is faster than native API due to call overhead.
+ * Threshold (in hex string length) below which lookup-table fallback is faster than native `fromHex`.
+ * For small inputs (<= 128 hex chars), pure JS is faster due to native call overhead.
  */
-const DECODE_NATIVE_THRESHOLD = 22; // hex.length (hex string length, = 11 bytes)
+const DECODE_FALLBACK_THRESHOLD = 128; // hex.length
+
+/**
+ * Pre-computed byte-to-hex lookup table (256 entries).
+ */
+const encodeTable = Lazy(() =>
+    Array.from({ length: 256 }, (_, i) => i.toString(16).padStart(2, '0')),
+);
+
+/**
+ * Pre-computed charCode-to-nibble decode table.
+ * Valid hex chars map to 0-15, everything else maps to 0xFF.
+ */
+const decodeTable = Lazy(() => {
+    // 128 entries covers all ASCII charCodes (max hex char 'f' = 0x66 = 102).
+    // Fill with 0xFF as invalid marker — valid nibbles are 0-15,
+    // so (hi | lo) > 0x0F detects any non-hex character.
+    const table = new Uint8Array(128).fill(0xFF);
+    for (let i = 0; i < 10; i++) table[0x30 + i] = i;       // '0'-'9'
+    for (let i = 0; i < 6; i++) table[0x41 + i] = 10 + i;   // 'A'-'F'
+    for (let i = 0; i < 6; i++) table[0x61 + i] = 10 + i;   // 'a'-'f'
+    return table;
+});
 
 // #endregion
 
@@ -72,7 +94,7 @@ export function encodeHex(data: DataSource): string {
  * ```
  */
 export function decodeHex(hex: string): Uint8Array<ArrayBuffer> {
-    return typeof Uint8Array.fromHex === 'function' && hex.length >= DECODE_NATIVE_THRESHOLD
+    return typeof Uint8Array.fromHex === 'function' && hex.length > DECODE_FALLBACK_THRESHOLD
         ? Uint8Array.fromHex(hex)
         : decodeHexFallback(hex);
 }
@@ -80,17 +102,24 @@ export function decodeHex(hex: string): Uint8Array<ArrayBuffer> {
 // #region Internal Functions
 
 /**
- * Pure JS implementation of hex encoding.
+ * Pure JS implementation of hex encoding using pre-computed lookup table.
  *
  * @param bytes - The bytes to encode.
  * @returns Hexadecimal string.
  */
 function encodeHexFallback(bytes: Uint8Array<ArrayBuffer>): string {
-    return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+    const table = encodeTable.force();
+
+    let result = '';
+    for (const byte of bytes) {
+        result += table[byte];
+    }
+    return result;
 }
 
 /**
- * Pure JS implementation of hex decoding.
+ * Pure JS implementation of hex decoding using charCode lookup table.
+ * Validates and decodes in a single pass.
  *
  * @param hex - Hexadecimal string.
  * @returns Decoded Uint8Array.
@@ -100,17 +129,31 @@ function encodeHexFallback(bytes: Uint8Array<ArrayBuffer>): string {
 function decodeHexFallback(hex: string): Uint8Array<ArrayBuffer> {
     assertInputIsString(hex);
 
-    if (hex.length % 2 !== 0 || /[^0-9a-fA-F]/.test(hex)) {
-        throw new SyntaxError('Input string must contain hex characters in even length');
+    const { length } = hex;
+    if (length % 2 !== 0) {
+        throwInvalidHex();
     }
 
-    const bytes = new Uint8Array(hex.length / 2);
+    const table = decodeTable.force();
+    const bytes = new Uint8Array(length / 2);
 
-    for (let i = 0; i < bytes.length; i++) {
-        bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+    for (let i = 0; i < length; i += 2) {
+        const hi = table[hex.charCodeAt(i)];
+        const lo = table[hex.charCodeAt(i + 1)];
+        if ((hi | lo) > 0x0F) {
+            throwInvalidHex();
+        }
+        bytes[i >> 1] = (hi << 4) | lo;
     }
 
     return bytes;
+}
+
+/**
+ * Throws a SyntaxError for invalid hex input.
+ */
+function throwInvalidHex(): never {
+    throw new SyntaxError('Input string must contain hex characters in even length');
 }
 
 // #endregion

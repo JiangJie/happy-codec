@@ -3,15 +3,9 @@
  * @module utf8
  */
 
-import { assertInputIsString, bufferSourceToBytes, Lazy } from '../internal/mod.ts';
+import { APPLY_CHUNK, assertInputIsString, bufferSourceToBytes, Lazy } from '../internal/mod.ts';
 
 // #region Internal Variables
-
-/**
- * Maximum number of code points passed to `String.fromCodePoint.apply` per call.
- * Kept well below engine call-stack limits (~65 536) to avoid `RangeError`.
- */
-const APPLY_CHUNK = 8192;
 /**
  * UTF-8 BOM (Byte Order Mark): U+FEFF
  */

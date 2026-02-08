@@ -3,15 +3,9 @@
  * @module bytestring
  */
 
-import { assertInputIsString } from '../internal/mod.ts';
+import { APPLY_CHUNK, assertInputIsString } from '../internal/mod.ts';
 import { dataSourceToBytes } from './helpers.ts';
 import type { DataSource } from './types.ts';
-
-/**
- * Maximum number of arguments passed to `String.fromCharCode.apply` per call.
- * Kept well below engine call-stack limits (~65 536) to avoid `RangeError`.
- */
-const APPLY_CHUNK = 8192;
 
 /**
  * Encodes a string or BufferSource to a byte string, with each byte as a character.

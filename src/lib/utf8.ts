@@ -159,7 +159,10 @@ function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): st
     const bytes = bufferSourceToBytes(data);
 
     const { fatal, ignoreBOM } = options;
-    const codePoints: number[] = [];
+    const { length } = bytes;
+    // Each byte produces at most one charCode; surrogate pairs (4 bytes → 2 charCodes) stay within bounds
+    const charCodes = new Uint16Array(length);
+    let pos = 0;
 
     /**
      * Handle invalid byte sequence: throw if fatal, otherwise collect replacement character.
@@ -168,10 +171,8 @@ function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): st
         if (fatal) {
             throw new TypeError('The encoded data was not valid for encoding utf-8');
         }
-        codePoints.push(0xfffd);
+        charCodes[pos++] = 0xfffd;
     }
-
-    const { length } = bytes;
 
     // Skip BOM at byte level: UTF-8 BOM is 0xef 0xbb 0xbf
     let i = (!ignoreBOM && length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf)
@@ -182,7 +183,7 @@ function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): st
 
         // 1-byte character (ASCII: 0x00-0x7f)
         if (byte1 < 0x80) {
-            codePoints.push(byte1);
+            charCodes[pos++] = byte1;
             i += 1;
             continue;
         }
@@ -244,14 +245,25 @@ function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): st
             continue;
         }
 
-        codePoints.push(codePoint);
+        if (codePoint < 0x10000) {
+            charCodes[pos++] = codePoint;
+        } else {
+            // Split into surrogate pair for String.fromCharCode
+            const offset = codePoint - 0x10000;
+            charCodes[pos++] = 0xd800 + (offset >> 10);
+            charCodes[pos++] = 0xdc00 + (offset & 0x3ff);
+        }
         i += bytesNeeded;
     }
 
-    // Batch convert code points to string in chunks to avoid call-stack overflow
+    // Batch convert char codes to string in chunks to avoid call-stack overflow.
+    // Use subarray (not slice) — the view is only passed to fromCharCode, not retained.
     let result = '';
-    for (let j = 0; j < codePoints.length; j += APPLY_CHUNK) {
-        result += String.fromCodePoint.apply(null, codePoints.slice(j, j + APPLY_CHUNK));
+    for (let j = 0; j < pos; j += APPLY_CHUNK) {
+        result += String.fromCharCode.apply(
+            null,
+            charCodes.subarray(j, Math.min(j + APPLY_CHUNK, pos)) as unknown as number[],
+        );
     }
 
     return result;

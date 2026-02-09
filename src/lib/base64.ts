@@ -1,8 +1,6 @@
 /**
  * Base64 encoding/decoding module.
  *
- * Derived from @std/encoding/base64 and https://github.com/cross-org/base64
- *
  * @module base64
  */
 
@@ -109,7 +107,7 @@ export interface DecodeBase64Options {
  *
  * Uses native `Uint8Array.prototype.toBase64` if available, otherwise pure JS fallback.
  *
- * @param data - The data to encode, can be a string, ArrayBuffer, TypedArray, or DataView.
+ * @param data - The data to encode, can be a string, ArrayBuffer, or ArrayBufferView.
  * @param options - Encoding options.
  * @returns Base64 encoded string.
  * @since 1.0.0

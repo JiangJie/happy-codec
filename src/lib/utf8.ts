@@ -8,14 +8,17 @@ import { assertInputIsString, bufferSourceToBytes, Lazy, typedArrayToString } fr
 
 // #region Internal Variables
 
+// label for TextDecoder
+const LABEL = 'utf-8';
+
 // Cached TextEncoder instance
 const encoder = Lazy(() => new TextEncoder());
 
 // Cached TextDecoder instances for all combinations of fatal × ignoreBOM
-const decoder = Lazy(() => new TextDecoder('utf-8', { fatal: false, ignoreBOM: false }));
-const decoderIgnoreBOM = Lazy(() => new TextDecoder('utf-8', { fatal: false, ignoreBOM: true }));
-const fatalDecoder = Lazy(() => new TextDecoder('utf-8', { fatal: true, ignoreBOM: false }));
-const fatalDecoderIgnoreBOM = Lazy(() => new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }));
+const decoder = Lazy(() => new TextDecoder(LABEL, { fatal: false, ignoreBOM: false }));
+const decoderIgnoreBOM = Lazy(() => new TextDecoder(LABEL, { fatal: false, ignoreBOM: true }));
+const fatalDecoder = Lazy(() => new TextDecoder(LABEL, { fatal: true, ignoreBOM: false }));
+const fatalDecoderIgnoreBOM = Lazy(() => new TextDecoder(LABEL, { fatal: true, ignoreBOM: true }));
 
 // #endregion
 
@@ -164,11 +167,11 @@ function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): st
         ? 3
         : 0;
     while (i < length) {
-        const byte1 = bytes[i];
+        const byte = bytes[i];
 
         // 1-byte character (ASCII: 0x00-0x7f)
-        if (byte1 < 0x80) {
-            charCodes[pos++] = byte1;
+        if (byte < 0x80) {
+            charCodes[pos++] = byte;
             i += 1;
             continue;
         }
@@ -179,22 +182,22 @@ function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): st
         let lowerBoundary = 0x80;
         let upperBoundary = 0xbf;
 
-        if (byte1 >= 0xc2 && byte1 < 0xe0) {
+        if (byte >= 0xc2 && byte < 0xe0) {
             // 2-byte character
             bytesNeeded = 2;
-            codePoint = byte1 & 0x1f;
-        } else if (byte1 >= 0xe0 && byte1 < 0xf0) {
+            codePoint = byte & 0x1f;
+        } else if (byte >= 0xe0 && byte < 0xf0) {
             // 3-byte character
             bytesNeeded = 3;
-            codePoint = byte1 & 0x0f;
-            if (byte1 === 0xe0) lowerBoundary = 0xa0;
-            if (byte1 === 0xed) upperBoundary = 0x9f;
-        } else if (byte1 >= 0xf0 && byte1 < 0xf5) {
+            codePoint = byte & 0x0f;
+            if (byte === 0xe0) lowerBoundary = 0xa0;
+            if (byte === 0xed) upperBoundary = 0x9f;
+        } else if (byte >= 0xf0 && byte < 0xf5) {
             // 4-byte character
             bytesNeeded = 4;
-            codePoint = byte1 & 0x07;
-            if (byte1 === 0xf0) lowerBoundary = 0x90;
-            if (byte1 === 0xf4) upperBoundary = 0x8f;
+            codePoint = byte & 0x07;
+            if (byte === 0xf0) lowerBoundary = 0x90;
+            if (byte === 0xf4) upperBoundary = 0x8f;
         } else {
             // Invalid leading byte (0x80-0xc1, 0xf5-0xff)
             handleInvalid();

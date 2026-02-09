@@ -15,9 +15,16 @@ import { encodeUtf8 } from './utf8.ts';
  *
  * @param data - The data to convert.
  * @returns Converted `Uint8Array`.
+ * @throws {TypeError} If the input is not a string, ArrayBuffer, or ArrayBufferView.
  */
 export function dataSourceToBytes(data: DataSource): Uint8Array<ArrayBuffer> {
-    return typeof data === 'string'
-        ? encodeUtf8(data)
-        : bufferSourceToBytes(data);
+    if (typeof data === 'string') {
+        return encodeUtf8(data);
+    }
+
+    if (data instanceof ArrayBuffer || ArrayBuffer.isView(data)) {
+        return bufferSourceToBytes(data);
+    }
+
+    throw new TypeError('Input argument must be a string, ArrayBuffer, or ArrayBufferView');
 }

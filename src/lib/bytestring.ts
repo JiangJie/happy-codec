@@ -28,6 +28,7 @@ import type { DataSource } from './types.ts';
  */
 export function encodeByteString(data: DataSource): string {
     const bytes = dataSourceToBytes(data);
+
     return typedArrayToString(bytes, bytes.byteLength);
 }
 

@@ -15,6 +15,18 @@ const APPLY_CHUNK = 8192;
 // #endregion
 
 /**
+ * Asserts that the input is a string.
+ *
+ * @param input - The value to check.
+ * @throws {TypeError} If the input is not a string.
+ */
+export function assertInputIsString(input: string): void {
+    if (typeof input !== 'string') {
+        throw new TypeError('Input argument must be a string');
+    }
+}
+
+/**
  * Converts BufferSource to Uint8Array.
  *
  * @param input - The BufferSource to convert.
@@ -36,18 +48,6 @@ export function bufferSourceToBytes(input: BufferSource): Uint8Array<ArrayBuffer
     }
 
     throw new TypeError('Input argument must be an ArrayBuffer or ArrayBufferView');
-}
-
-/**
- * Asserts that the input is a string.
- *
- * @param input - The value to check.
- * @throws {TypeError} If the input is not a string.
- */
-export function assertInputIsString(input: string): void {
-    if (typeof input !== 'string') {
-        throw new TypeError('Input argument must be a string');
-    }
 }
 
 /**

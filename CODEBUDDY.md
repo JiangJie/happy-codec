@@ -89,5 +89,6 @@ const encoder = Lazy(() => new TextEncoder());
 - `encodeBase64` accepts `EncodeBase64Options` (`alphabet`, `omitPadding`) matching the native `Uint8Array.prototype.toBase64` API
 - `decodeBase64` accepts `DecodeBase64Options` (`alphabet`, `lastChunkHandling`) matching the native `Uint8Array.fromBase64` API
 - `decodeUtf8` accepts `TextDecoderOptions` (`fatal`, `ignoreBOM`) matching the standard `TextDecoder` API
+- Hexadecimal literals must use lowercase letters (e.g., `0xff` not `0xFF`)
 - Replacement character for invalid UTF-8 sequences: use `String.fromCharCode(0xfffd)` instead of `'\ufffd'` literal (Vite build converts the literal to `�`)
 - All modules maintain 100% test coverage

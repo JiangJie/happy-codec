@@ -20,9 +20,9 @@ Zero-dependency codec library for Base64, Hex, UTF-8 and ByteString encoding/dec
 
 - **Zero dependencies** - No external runtime dependencies
 - **Universal runtime** - Works in any JavaScript environment (Browser, Node.js, Deno, Bun, Web Workers, 小程序/小游戏 (如微信小游戏), etc.) regardless of DOM/BOM support
+- **UTF-8** - Native `TextEncoder`/`TextDecoder` when available, pure JS fallback otherwise
 - **Base64** - Native `Uint8Array.prototype.toBase64`/`Uint8Array.fromBase64` (ES2026) when available, pure JS fallback otherwise
 - **Hex** - Native `Uint8Array.prototype.toHex`/`Uint8Array.fromHex` (ES2026) when available, pure JS fallback otherwise
-- **UTF-8** - Native `TextEncoder`/`TextDecoder` when available, pure JS fallback otherwise
 - **ByteString** - Binary string conversions
 
 ## Installation
@@ -48,34 +48,15 @@ bunx jsr add @happy-js/happy-codec
 
 ```ts
 import {
-    encodeBase64,
     decodeBase64,
-    encodeHex,
-    decodeHex,
-    encodeUtf8,
-    decodeUtf8,
-    encodeByteString,
     decodeByteString,
+    decodeHex,
+    decodeUtf8,
+    encodeBase64,
+    encodeByteString,
+    encodeHex,
+    encodeUtf8,
 } from 'happy-codec';
-
-// Base64
-const base64 = encodeBase64('Hello, World!'); // 'SGVsbG8sIFdvcmxkIQ=='
-const bytes = decodeBase64(base64); // Uint8Array
-
-// Base64url alphabet
-const url = encodeBase64('Hello', { alphabet: 'base64url' }); // 'SGVsbG8'
-decodeBase64(url, { alphabet: 'base64url' }); // Uint8Array
-
-// Omit padding
-encodeBase64(new Uint8Array([65]), { omitPadding: true }); // 'QQ' (no trailing '==')
-
-// Strict decoding: require correct padding
-decodeBase64('QQ==', { lastChunkHandling: 'strict' }); // Uint8Array [65]
-// decodeBase64('QQ', { lastChunkHandling: 'strict' }); // throws SyntaxError
-
-// Hex
-const hex = encodeHex(new Uint8Array([255, 0, 128])); // 'ff0080'
-const data = decodeHex('ff0080'); // Uint8Array [255, 0, 128]
 
 // UTF-8
 const utf8Bytes = encodeUtf8('你好'); // Uint8Array [228, 189, 160, ...]
@@ -88,6 +69,22 @@ decodeUtf8(new Uint8Array([0xff]), { fatal: true }); // throws TypeError
 const withBOM = new Uint8Array([0xef, 0xbb, 0xbf, 0x48, 0x69]); // BOM + 'Hi'
 decodeUtf8(withBOM); // 'Hi'
 decodeUtf8(withBOM, { ignoreBOM: true }); // '\uFEFFHi'
+
+// Base64
+const base64 = encodeBase64('Hello, World!'); // 'SGVsbG8sIFdvcmxkIQ=='
+const bytes = decodeBase64(base64); // Uint8Array
+// Base64url alphabet
+const url = encodeBase64('Hello', { alphabet: 'base64url' }); // 'SGVsbG8'
+decodeBase64(url, { alphabet: 'base64url' }); // Uint8Array
+// Omit padding
+encodeBase64(new Uint8Array([65]), { omitPadding: true }); // 'QQ' (no trailing '==')
+// Strict decoding: require correct padding
+decodeBase64('QQ==', { lastChunkHandling: 'strict' }); // Uint8Array [65]
+// decodeBase64('QQ', { lastChunkHandling: 'strict' }); // throws SyntaxError
+
+// Hex
+const hex = encodeHex(new Uint8Array([255, 0, 128])); // 'ff0080'
+const data = decodeHex('ff0080'); // Uint8Array [255, 0, 128]
 
 // ByteString
 const byteStr = encodeByteString(new Uint8Array([72, 101, 108, 108, 111])); // 'Hello'
@@ -106,4 +103,4 @@ All encoding/decoding functions use native APIs when available, with pure JS fal
 
 ## License
 
-MIT
+[MIT](LICENSE)

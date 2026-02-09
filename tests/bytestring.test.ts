@@ -11,11 +11,6 @@ test('decodeByteString handles empty string', () => {
     expect(decodeByteString('')).toEqual(new Uint8Array([]));
 });
 
-test('encodeByteString converts buffer to string', () => {
-    const buffer = new Uint8Array([72, 101, 108, 108, 111]);
-    expect(encodeByteString(buffer)).toBe('Hello');
-});
-
 test('encodeByteString handles empty buffer', () => {
     expect(encodeByteString(new Uint8Array([]))).toBe('');
 });

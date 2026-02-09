@@ -53,6 +53,7 @@ const decodeTable = Lazy(() => {
  *
  * @param data - The DataSource to encode.
  * @returns Hexadecimal string.
+ * @throws {TypeError} If the input is not a string, ArrayBuffer, or ArrayBufferView.
  * @since 1.0.0
  * @example
  * ```ts

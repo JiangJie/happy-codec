@@ -56,6 +56,7 @@ export function encodeUtf8(input: string): Uint8Array<ArrayBuffer> {
  * @param options.fatal - If true, throw on invalid sequences. If false (default), replace with U+FFFD.
  * @param options.ignoreBOM - If true, keep BOM in output. If false (default), strip BOM.
  * @returns Decoded string.
+ * @throws {TypeError} If `options.fatal` is `true` and the input contains invalid UTF-8 sequences.
  * @since 1.0.0
  * @example
  * ```ts
@@ -142,6 +143,7 @@ function encodeUtf8Fallback(input: string): Uint8Array<ArrayBuffer> {
  * @param data - The BufferSource to decode.
  * @param options - Decoding options (same as TextDecoderOptions).
  * @returns Decoded string.
+ * @throws {TypeError} If `options.fatal` is `true` and the input contains invalid UTF-8 sequences.
  */
 function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): string {
     const bytes = bufferSourceToBytes(data);

@@ -110,6 +110,7 @@ export interface DecodeBase64Options {
  * @param data - The data to encode, can be a string, ArrayBuffer, or ArrayBufferView.
  * @param options - Encoding options.
  * @returns Base64 encoded string.
+ * @throws {TypeError} If the input is not a string, ArrayBuffer, or ArrayBufferView.
  * @since 1.0.0
  * @example
  * ```ts

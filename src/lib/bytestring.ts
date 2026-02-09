@@ -16,6 +16,7 @@ import type { DataSource } from './types.ts';
  *
  * @param data - The string or BufferSource to encode.
  * @returns Byte string.
+ * @throws {TypeError} If the input is not a string, ArrayBuffer, or ArrayBufferView.
  * @since 1.0.0
  * @example
  * ```ts

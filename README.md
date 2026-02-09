@@ -8,7 +8,7 @@
 [![JSR Version](https://jsr.io/badges/@happy-js/happy-codec)](https://jsr.io/@happy-js/happy-codec)
 [![JSR Score](https://jsr.io/badges/@happy-js/happy-codec/score)](https://jsr.io/@happy-js/happy-codec/score)
 
-Zero-dependency codec library for Base64, Hex, UTF-8 and ByteString encoding/decoding.
+Zero-dependency codec library for UTF-8, Base64, Hex and ByteString encoding/decoding.
 
 ---
 

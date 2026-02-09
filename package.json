@@ -3,7 +3,7 @@
   "description": "Zero-dependency codec library for Base64, Hex, UTF-8 and ByteString encoding/decoding.",
   "author": "jiang115jie@gmail.com",
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "main": "dist/main.cjs",
   "module": "dist/main.mjs",
@@ -44,7 +44,10 @@
     "codec",
     "encoding",
     "decoding",
+    "encoder",
+    "decoder",
     "base64",
+    "base64url",
     "hex",
     "utf8",
     "utf-8",
@@ -54,7 +57,9 @@
     "arraybuffer",
     "uint8array",
     "text-encoder",
-    "text-decoder"
+    "text-decoder",
+    "zero-dependency",
+    "polyfill"
   ],
   "devDependencies": {
     "@eslint/js": "^9.39.2",

@@ -62,6 +62,17 @@ import {
 const base64 = encodeBase64('Hello, World!'); // 'SGVsbG8sIFdvcmxkIQ=='
 const bytes = decodeBase64(base64); // Uint8Array
 
+// Base64url alphabet
+const url = encodeBase64('Hello', { alphabet: 'base64url' }); // 'SGVsbG8'
+decodeBase64(url, { alphabet: 'base64url' }); // Uint8Array
+
+// Omit padding
+encodeBase64(new Uint8Array([65]), { omitPadding: true }); // 'QQ' (no trailing '==')
+
+// Strict decoding: require correct padding
+decodeBase64('QQ==', { lastChunkHandling: 'strict' }); // Uint8Array [65]
+// decodeBase64('QQ', { lastChunkHandling: 'strict' }); // throws SyntaxError
+
 // Hex
 const hex = encodeHex(new Uint8Array([255, 0, 128])); // 'ff0080'
 const data = decodeHex('ff0080'); // Uint8Array [255, 0, 128]

@@ -4,17 +4,7 @@
  * @module hex
  */
 
-// ES2026: Uint8Array hex methods (not yet in TS lib types)
-declare global {
-    interface Uint8Array {
-        toHex(): string;
-    }
-    interface Uint8ArrayConstructor {
-        fromHex(hex: string): Uint8Array<ArrayBuffer>;
-    }
-}
-
-import { assertInputIsString, Lazy } from '../internal/mod.ts';
+import { assertInputIsString, Lazy, type Uint8ArrayConstructorWithBase64Hex, type Uint8ArrayWithBase64Hex } from '../internal/mod.ts';
 import { dataSourceToBytes } from './helpers.ts';
 import type { DataSource } from './types.ts';
 
@@ -67,8 +57,9 @@ const decodeTable = Lazy(() => {
 export function encodeHex(data: DataSource): string {
     const bytes = dataSourceToBytes(data);
 
-    return typeof bytes.toHex === 'function'
-        ? bytes.toHex()
+    const extended = bytes as Uint8ArrayWithBase64Hex;
+    return typeof extended.toHex === 'function'
+        ? extended.toHex()
         : encodeHexFallback(bytes);
 }
 
@@ -89,8 +80,9 @@ export function encodeHex(data: DataSource): string {
  * ```
  */
 export function decodeHex(hex: string): Uint8Array<ArrayBuffer> {
-    return typeof Uint8Array.fromHex === 'function'
-        ? Uint8Array.fromHex(hex)
+    const ctor = Uint8Array as unknown as Uint8ArrayConstructorWithBase64Hex;
+    return typeof ctor.fromHex === 'function'
+        ? ctor.fromHex(hex)
         : decodeHexFallback(hex);
 }
 

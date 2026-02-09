@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import { decodeHex, encodeHex } from '../src/mod.ts';
+import type { Uint8ArrayConstructorWithBase64Hex, Uint8ArrayWithBase64Hex } from '../src/internal/mod.ts';
 
 test('encodeHex converts buffer to hex string', () => {
     const buffer = new Uint8Array([0, 15, 16, 255]);
@@ -89,13 +90,13 @@ test('hex round-trip with large data above native threshold', () => {
 describe('Hex fallback implementation', () => {
     let encodeHexFallback: (data: string | BufferSource) => string;
     let decodeHexFallback: (hex: string) => Uint8Array<ArrayBuffer>;
-    let originalToHex: typeof Uint8Array.prototype.toHex;
-    let originalFromHex: typeof Uint8Array.fromHex;
+    let originalToHex: Uint8ArrayWithBase64Hex['toHex'];
+    let originalFromHex: Uint8ArrayConstructorWithBase64Hex['fromHex'];
 
     beforeAll(async () => {
         // Save originals
-        originalToHex = Uint8Array.prototype.toHex;
-        originalFromHex = Uint8Array.fromHex;
+        originalToHex = (Uint8Array.prototype as unknown as Uint8ArrayWithBase64Hex).toHex;
+        originalFromHex = (Uint8Array as unknown as Uint8ArrayConstructorWithBase64Hex).fromHex;
 
         // Remove native APIs to force fallback
         // @ts-expect-error - intentionally removing for testing
@@ -111,8 +112,8 @@ describe('Hex fallback implementation', () => {
     });
 
     afterAll(() => {
-        Uint8Array.prototype.toHex = originalToHex;
-        Uint8Array.fromHex = originalFromHex;
+        (Uint8Array.prototype as unknown as Uint8ArrayWithBase64Hex).toHex = originalToHex;
+        (Uint8Array as unknown as Uint8ArrayConstructorWithBase64Hex).fromHex = originalFromHex;
     });
 
     test('encodeHex fallback converts buffer to hex string', () => {

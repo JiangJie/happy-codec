@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
-import { decodeBase64, encodeBase64 } from '../src/mod.ts';
-import type { DecodeBase64Options, EncodeBase64Options } from '../src/mod.ts';
+import type { Uint8ArrayConstructorWithBase64Hex, Uint8ArrayWithBase64Hex } from '../src/internal/mod.ts';
+import { decodeBase64, encodeBase64, type DecodeBase64Options, type EncodeBase64Options } from '../src/mod.ts';
 
 test('encodeBase64 with DataView', () => {
     const buffer = new ArrayBuffer(8);
@@ -181,13 +181,13 @@ describe('decodeBase64 with options', () => {
 describe('Base64 decodeBase64 fallback implementation', () => {
     let decodeBase64Fallback: (data: string, options?: DecodeBase64Options) => Uint8Array<ArrayBuffer>;
     let encodeBase64Fallback: (data: string | BufferSource, options?: EncodeBase64Options) => string;
-    let originalFromBase64: typeof Uint8Array.fromBase64;
-    let originalToBase64: typeof Uint8Array.prototype.toBase64;
+    let originalFromBase64: Uint8ArrayConstructorWithBase64Hex['fromBase64'];
+    let originalToBase64: Uint8ArrayWithBase64Hex['toBase64'];
 
     beforeAll(async () => {
         // Save originals
-        originalFromBase64 = Uint8Array.fromBase64;
-        originalToBase64 = Uint8Array.prototype.toBase64;
+        originalFromBase64 = (Uint8Array as unknown as Uint8ArrayConstructorWithBase64Hex).fromBase64;
+        originalToBase64 = (Uint8Array.prototype as unknown as Uint8ArrayWithBase64Hex).toBase64;
 
         // Remove native APIs to trigger fallback
         // @ts-expect-error - intentionally removing for testing
@@ -206,8 +206,8 @@ describe('Base64 decodeBase64 fallback implementation', () => {
 
     afterAll(() => {
         // Restore originals
-        Uint8Array.fromBase64 = originalFromBase64;
-        Uint8Array.prototype.toBase64 = originalToBase64;
+        (Uint8Array as unknown as Uint8ArrayConstructorWithBase64Hex).fromBase64 = originalFromBase64;
+        (Uint8Array.prototype as unknown as Uint8ArrayWithBase64Hex).toBase64 = originalToBase64;
     });
 
     test('decodeBase64 decodes simple ASCII data via fallback', () => {

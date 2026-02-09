@@ -15,10 +15,11 @@
  */
 
 import { bench, describe } from 'vitest';
+import type { Uint8ArrayConstructorWithBase64Hex, Uint8ArrayWithBase64Hex } from '../src/internal/mod.ts';
 
 // Save native implementations for comparison
-const nativeToHex = Uint8Array.prototype.toHex;
-const nativeFromHex = Uint8Array.fromHex;
+const nativeToHex = (Uint8Array.prototype as unknown as Uint8ArrayWithBase64Hex).toHex;
+const nativeFromHex = (Uint8Array as unknown as Uint8ArrayConstructorWithBase64Hex).fromHex;
 
 // Remove native APIs to get fallback
 // @ts-expect-error - intentionally removing for benchmark

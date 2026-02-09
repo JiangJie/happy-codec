@@ -20,9 +20,9 @@ Zero-dependency codec library for Base64, Hex, UTF-8 and ByteString encoding/dec
 
 - **Zero dependencies** - No external runtime dependencies
 - **Universal runtime** - Works in any JavaScript environment (Browser, Node.js, Deno, Bun, Web Workers, 小程序/小游戏 (如微信小游戏), etc.) regardless of DOM/BOM support
-- **Base64** - Hybrid encoding/decoding: pure JS for small inputs, native `Uint8Array.prototype.toBase64`/`Uint8Array.fromBase64` for larger ones (if available)
-- **Hex** - Hybrid encoding/decoding: pure JS for small inputs, native `Uint8Array.prototype.toHex`/`Uint8Array.fromHex` for larger ones (if available)
-- **UTF-8** - Hybrid UTF-8 encoding/decoding: pure JS for small inputs, native `TextEncoder`/`TextDecoder` for larger ones (if available)
+- **Base64** - Native `Uint8Array.prototype.toBase64`/`Uint8Array.fromBase64` (TC39 Stage 4) when available, pure JS fallback otherwise
+- **Hex** - Native `Uint8Array.prototype.toHex`/`Uint8Array.fromHex` (TC39 Stage 4) when available, pure JS fallback otherwise
+- **UTF-8** - Native `TextEncoder`/`TextDecoder` when available, pure JS fallback otherwise
 - **ByteString** - Binary string conversions
 
 ## Installation
@@ -85,31 +85,13 @@ const byteArr = decodeByteString('Hello'); // Uint8Array [72, 101, 108, 108, 111
 
 ## Performance
 
-All encoding/decoding functions are benchmarked against native APIs to choose the fastest strategy.
+All encoding/decoding functions use native APIs when available, with pure JS fallback for environments that don't support them yet.
 
-### Base64
+- **Base64**: Native `Uint8Array.prototype.toBase64` / `Uint8Array.fromBase64` (TC39 Stage 4) when available, pure JS fallback otherwise.
+- **Hex**: Native `Uint8Array.prototype.toHex` / `Uint8Array.fromHex` (TC39 Stage 4) when available, pure JS fallback otherwise.
+- **UTF-8**: Native `TextEncoder` / `TextDecoder` when available, pure JS fallback otherwise.
 
-happy-codec uses native `Uint8Array.prototype.toBase64` / `Uint8Array.fromBase64` (TC39 Stage 4) when available, with pure JS fallback for environments that don't support them yet.
-
-- **`encodeBase64`**: Native `toBase64` for inputs >= 21 bytes, pure JS for smaller ones.
-- **`decodeBase64`**: Native `fromBase64` for inputs >= 88 base64 chars (~66 bytes), pure JS for smaller ones.
-
-### Hex
-
-happy-codec uses native `Uint8Array.prototype.toHex` / `Uint8Array.fromHex` (TC39 Stage 4) when available, with pure JS fallback for environments that don't support them yet.
-
-- **`encodeHex`**: Always uses native `toHex` when available (faster at all sizes).
-- **`decodeHex`**: Native `fromHex` for inputs >= 22 hex chars (11 bytes), pure JS for smaller ones.
-
-### UTF-8
-
-Native `TextEncoder`/`TextDecoder` have per-call overhead that makes them slower than pure JS for small inputs. happy-codec uses a hybrid strategy based on benchmarks:
-
-- **`encodeUtf8`**: Pure JS for short strings (length <= 21, up to 63 bytes), native `TextEncoder` for larger ones. Falls back to pure JS when `TextEncoder` is unavailable.
-- **`decodeUtf8`**: Pure JS for small data (byteLength <= 4), native `TextDecoder` for larger ones. Falls back to pure JS when `TextDecoder` is unavailable.
-
-> **Benchmark environment:** Node.js v25.6.0, AMD EPYC 7K83 64-Core Processor, Linux x86_64.
-> Results may vary across different JS engines, hardware, and OS. Run `pnpm run bench` to verify on your own environment.
+> Run `pnpm run bench` to compare fallback vs native performance on your own environment.
 
 ## License
 

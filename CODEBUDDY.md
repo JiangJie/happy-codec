@@ -57,15 +57,15 @@ All encoding/decoding functions detect native API availability at runtime and fa
 
 ```ts
 // Example pattern from base64.ts
-return typeof Uint8Array.fromBase64 === 'function' && data.length >= DECODE_NATIVE_THRESHOLD
+return typeof Uint8Array.fromBase64 === 'function'
     ? Uint8Array.fromBase64(data)
     : decodeBase64Fallback(data);
 ```
 
-- `encodeBase64`: Uses native `Uint8Array.prototype.toBase64` for larger inputs if available, otherwise pure JS
-- `decodeBase64`: Uses native `Uint8Array.fromBase64` for larger inputs if available, otherwise pure JS fallback
+- `encodeBase64`: Uses native `Uint8Array.prototype.toBase64` if available, otherwise pure JS
+- `decodeBase64`: Uses native `Uint8Array.fromBase64` if available, otherwise pure JS fallback
 - `encodeHex`: Uses native `Uint8Array.prototype.toHex` if available, otherwise pure JS
-- `decodeHex`: Uses native `Uint8Array.fromHex` for larger inputs if available, otherwise pure JS fallback
+- `decodeHex`: Uses native `Uint8Array.fromHex` if available, otherwise pure JS fallback
 - `encodeUtf8`: Uses `TextEncoder` if available, otherwise pure JS fallback
 - `decodeUtf8`: Uses `TextDecoder` if available, otherwise pure JS fallback
 

@@ -1,6 +1,7 @@
 /**
- * @internal
  * Internal helper module.
+ *
+ * @internal
  */
 
 export * from './helpers.ts';

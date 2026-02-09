@@ -1,13 +1,14 @@
 /**
- * @internal
  * Internal helper functions.
+ *
+ * @internal
  */
 
 // #region Internal Variables
 
 /**
  * Maximum number of arguments passed to `Function.prototype.apply` per call.
- * Kept well below engine call-stack limits (~65 536) to avoid `RangeError`.
+ * Kept well below engine call-stack limits (~65536) to avoid `RangeError: Maximum call stack size exceeded`.
  */
 const APPLY_CHUNK = 8192;
 

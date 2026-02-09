@@ -1,6 +1,7 @@
 /**
- * @internal
  * Minimal Lazy implementation for deferred value initialization.
+ *
+ * @internal
  */
 
 /**

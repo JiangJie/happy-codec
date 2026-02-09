@@ -1,5 +1,6 @@
 /**
  * Hex (hexadecimal) encoding/decoding module.
+ *
  * @module hex
  */
 

@@ -1,5 +1,6 @@
 /**
  * UTF-8 encoding/decoding module.
+ *
  * @module utf8
  */
 

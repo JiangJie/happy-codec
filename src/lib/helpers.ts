@@ -1,6 +1,7 @@
 /**
+ * Internal encoding/decoding helper functions for library.
+ *
  * @internal
- * Internal encoding/decoding helper functions.
  */
 
 import { bufferSourceToBytes } from '../internal/mod.ts';

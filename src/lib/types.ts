@@ -1,5 +1,6 @@
 /**
  * Public type definitions module.
+ *
  * @module types
  */
 

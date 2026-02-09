@@ -1,5 +1,6 @@
 /**
  * ByteString encoding/decoding module.
+ *
  * @module bytestring
  */
 

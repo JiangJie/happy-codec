@@ -6,7 +6,7 @@
  * @module base64
  */
 
-// TC39 Stage 4: Uint8Array base64 methods (not yet in TS lib types)
+// ES2026: Uint8Array base64 methods (not yet in TS lib types)
 declare global {
     interface Uint8Array {
         toBase64(options?: { alphabet?: 'base64' | 'base64url'; omitPadding?: boolean; }): string;

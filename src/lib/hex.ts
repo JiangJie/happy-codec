@@ -3,7 +3,7 @@
  * @module hex
  */
 
-// TC39 Stage 4: Uint8Array hex methods (not yet in TS lib types)
+// ES2026: Uint8Array hex methods (not yet in TS lib types)
 declare global {
     interface Uint8Array {
         toHex(): string;

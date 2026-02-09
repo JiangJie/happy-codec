@@ -20,8 +20,8 @@ Zero-dependency codec library for Base64, Hex, UTF-8 and ByteString encoding/dec
 
 - **Zero dependencies** - No external runtime dependencies
 - **Universal runtime** - Works in any JavaScript environment (Browser, Node.js, Deno, Bun, Web Workers, 小程序/小游戏 (如微信小游戏), etc.) regardless of DOM/BOM support
-- **Base64** - Native `Uint8Array.prototype.toBase64`/`Uint8Array.fromBase64` (TC39 Stage 4) when available, pure JS fallback otherwise
-- **Hex** - Native `Uint8Array.prototype.toHex`/`Uint8Array.fromHex` (TC39 Stage 4) when available, pure JS fallback otherwise
+- **Base64** - Native `Uint8Array.prototype.toBase64`/`Uint8Array.fromBase64` (ES2026) when available, pure JS fallback otherwise
+- **Hex** - Native `Uint8Array.prototype.toHex`/`Uint8Array.fromHex` (ES2026) when available, pure JS fallback otherwise
 - **UTF-8** - Native `TextEncoder`/`TextDecoder` when available, pure JS fallback otherwise
 - **ByteString** - Binary string conversions
 
@@ -87,8 +87,8 @@ const byteArr = decodeByteString('Hello'); // Uint8Array [72, 101, 108, 108, 111
 
 All encoding/decoding functions use native APIs when available, with pure JS fallback for environments that don't support them yet.
 
-- **Base64**: Native `Uint8Array.prototype.toBase64` / `Uint8Array.fromBase64` (TC39 Stage 4) when available, pure JS fallback otherwise.
-- **Hex**: Native `Uint8Array.prototype.toHex` / `Uint8Array.fromHex` (TC39 Stage 4) when available, pure JS fallback otherwise.
+- **Base64**: Native `Uint8Array.prototype.toBase64` / `Uint8Array.fromBase64` (ES2026) when available, pure JS fallback otherwise.
+- **Hex**: Native `Uint8Array.prototype.toHex` / `Uint8Array.fromHex` (ES2026) when available, pure JS fallback otherwise.
 - **UTF-8**: Native `TextEncoder` / `TextDecoder` when available, pure JS fallback otherwise.
 
 > Run `pnpm run bench` to compare fallback vs native performance on your own environment.

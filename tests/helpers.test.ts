@@ -1,7 +1,17 @@
 import { expect, test } from 'vitest';
+import { bufferSourceToBytes } from '../src/internal/mod.ts';
 import { decodeBase64, decodeByteString, decodeHex, encodeHex, encodeUtf8 } from '../src/mod.ts';
 
-test('encodeHex throws TypeError for invalid BufferSource', () => {
+test('bufferSourceToBytes throws TypeError for invalid BufferSource', () => {
+    // @ts-expect-error - intentionally passing invalid type for testing
+    expect(() => bufferSourceToBytes(123)).toThrow(TypeError);
+    // @ts-expect-error - intentionally passing invalid type for testing
+    expect(() => bufferSourceToBytes(null)).toThrow(TypeError);
+    // @ts-expect-error - intentionally passing invalid type for testing
+    expect(() => bufferSourceToBytes('string')).toThrow(TypeError);
+});
+
+test('encodeHex throws TypeError for invalid DataSource', () => {
     // @ts-expect-error - intentionally passing invalid type for testing
     expect(() => encodeHex(123)).toThrow(TypeError);
     // @ts-expect-error - intentionally passing invalid type for testing

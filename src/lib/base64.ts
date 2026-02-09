@@ -147,7 +147,7 @@ export function encodeBase64(data: DataSource, options?: EncodeBase64Options): s
  * @throws {TypeError} If the input is not a string.
  * @throws {SyntaxError} If the input contains invalid characters for the chosen alphabet.
  * @throws {SyntaxError} If the input has an invalid length (trailing single character).
- * @throws {SyntaxError} If `lastChunkHandling` is `'strict'` and padding is missing or padding bits are non-zero.
+ * @throws {SyntaxError} If `options.lastChunkHandling` is `'strict'` and padding is missing or padding bits are non-zero.
  * @since 1.0.0
  * @example
  * ```ts
@@ -229,7 +229,7 @@ function encodeBase64Fallback(bytes: Uint8Array<ArrayBuffer>, options?: EncodeBa
  * @throws {TypeError} If the input is not a string.
  * @throws {SyntaxError} If the input contains invalid characters for the chosen alphabet.
  * @throws {SyntaxError} If the input has an invalid length (trailing single character).
- * @throws {SyntaxError} If `lastChunkHandling` is `'strict'` and padding is missing or padding bits are non-zero.
+ * @throws {SyntaxError} If `options.lastChunkHandling` is `'strict'` and padding is missing or padding bits are non-zero.
  */
 function decodeBase64Fallback(base64: string, options?: DecodeBase64Options): Uint8Array<ArrayBuffer> {
     assertInputIsString(base64);
@@ -328,7 +328,7 @@ function decodeBase64Fallback(base64: string, options?: DecodeBase64Options): Ui
 }
 
 /**
- * Build a 256-byte lookup table from a base64 character array.
+ * Build a 128-byte lookup table from a base64 character array.
  */
 function buildLookup(abc: string[]): Uint8Array {
     // 128 entries covers all ASCII charCodes.

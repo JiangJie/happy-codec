@@ -428,6 +428,16 @@ describe('Base64 decodeBase64 fallback implementation', () => {
         expect(() => decodeBase64Fallback('QUJ=', { lastChunkHandling: 'strict' })).toThrow('The base64 input terminates with non-zero padding bits');
     });
 
+    test('fallback: lastChunkHandling strict validates padding bits with base64url', () => {
+        expect(() => decodeBase64Fallback('QR==', { alphabet: 'base64url', lastChunkHandling: 'strict' })).toThrow('The base64 input terminates with non-zero padding bits');
+        expect(() => decodeBase64Fallback('QUJ=', { alphabet: 'base64url', lastChunkHandling: 'strict' })).toThrow('The base64 input terminates with non-zero padding bits');
+    });
+
+    test('fallback: lastChunkHandling strict accepts aligned input without padding with base64url', () => {
+        // 'QUJD' is 4 chars, no padding needed, strict mode should accept it
+        expect(decodeBase64Fallback('QUJD', { alphabet: 'base64url', lastChunkHandling: 'strict' })).toEqual(new Uint8Array([65, 66, 67]));
+    });
+
     test('fallback: lastChunkHandling stop-before-partial ignores incomplete chunk', () => {
         expect(decodeBase64Fallback('QUJDQQ', { lastChunkHandling: 'stop-before-partial' })).toEqual(new Uint8Array([65, 66, 67]));
     });

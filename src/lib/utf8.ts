@@ -6,14 +6,6 @@
 import { assertInputIsString, bufferSourceToBytes, Lazy, typedArrayToString } from '../internal/mod.ts';
 
 // #region Internal Variables
-/**
- * Threshold for using fallback encode implementation.
- * For small inputs, pure JS is faster than native API due to call overhead.
- *
- * 21 chars of 3-byte CJK characters = 63 bytes (worst case),
- * benchmarked with maximum bytes.push() calls per string.length.
- */
-const ENCODE_FALLBACK_THRESHOLD = 21; // string.length (up to 63 bytes)
 
 // Cached TextEncoder instance
 const encoder = Lazy(() => new TextEncoder());
@@ -29,8 +21,7 @@ const fatalDecoderIgnoreBOM = Lazy(() => new TextDecoder('utf-8', { fatal: true,
 /**
  * Encodes string data to `Uint8Array` (UTF-8 encoding).
  *
- * Uses pure JS for small strings (length <= 21, up to 63 bytes) and native `TextEncoder` for larger ones.
- * Falls back to pure JS when `TextEncoder` is not available.
+ * Uses native `TextEncoder` if available, otherwise pure JS fallback.
  *
  * @param input - The string data to encode.
  * @returns Encoded `Uint8Array`.
@@ -45,9 +36,7 @@ const fatalDecoderIgnoreBOM = Lazy(() => new TextDecoder('utf-8', { fatal: true,
 export function encodeUtf8(input: string): Uint8Array<ArrayBuffer> {
     assertInputIsString(input);
 
-    // Use fallback for small inputs (faster due to native API call overhead)
-    // or when TextEncoder is not available
-    return typeof TextEncoder === 'function' && input.length > ENCODE_FALLBACK_THRESHOLD
+    return typeof TextEncoder === 'function'
         ? encoder.force().encode(input)
         : encodeUtf8Fallback(input);
 }

@@ -23,18 +23,6 @@ import type { DataSource } from './types.ts';
 // #region Internal Variables
 
 /**
- * Threshold for using native `Uint8Array.prototype.toBase64`.
- * For small inputs (<= 18 bytes), pure JS is faster due to native call overhead.
- */
-const ENCODE_FALLBACK_THRESHOLD = 18; // byteLength
-
-/**
- * Threshold for using native `Uint8Array.fromBase64`.
- * For small inputs (<= 84 chars), pure JS is faster due to native call overhead.
- */
-const DECODE_FALLBACK_THRESHOLD = 84; // base64.length (base64 string length, ≈63 bytes)
-
-/**
  * Common prefix shared by both base64 alphabets (first 62 characters).
  */
 const commonChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -119,8 +107,7 @@ export interface DecodeBase64Options {
 /**
  * Converts DataSource (string or BufferSource) to a Base64 encoded string.
  *
- * Uses native `Uint8Array.prototype.toBase64` for larger inputs if available,
- * pure JS fallback for small inputs or when native API is unavailable.
+ * Uses native `Uint8Array.prototype.toBase64` if available, otherwise pure JS fallback.
  *
  * @param data - The data to encode, can be a string, ArrayBuffer, TypedArray, or DataView.
  * @param options - Encoding options.
@@ -145,7 +132,7 @@ export interface DecodeBase64Options {
 export function encodeBase64(data: DataSource, options?: EncodeBase64Options): string {
     const bytes = dataSourceToBytes(data);
 
-    return typeof bytes.toBase64 === 'function' && bytes.byteLength > ENCODE_FALLBACK_THRESHOLD
+    return typeof bytes.toBase64 === 'function'
         ? bytes.toBase64(options)
         : encodeBase64Fallback(bytes, options);
 }
@@ -153,8 +140,7 @@ export function encodeBase64(data: DataSource, options?: EncodeBase64Options): s
 /**
  * Converts a Base64 encoded string to Uint8Array.
  *
- * Uses native `Uint8Array.fromBase64` for larger inputs if available,
- * pure JS fallback for small inputs or when native API is unavailable.
+ * Uses native `Uint8Array.fromBase64` if available, otherwise pure JS fallback.
  *
  * @param base64 - Base64 encoded string.
  * @param options - Decoding options.
@@ -181,7 +167,7 @@ export function encodeBase64(data: DataSource, options?: EncodeBase64Options): s
  * ```
  */
 export function decodeBase64(base64: string, options?: DecodeBase64Options): Uint8Array<ArrayBuffer> {
-    return typeof Uint8Array.fromBase64 === 'function' && base64.length > DECODE_FALLBACK_THRESHOLD
+    return typeof Uint8Array.fromBase64 === 'function'
         ? Uint8Array.fromBase64(base64, options)
         : decodeBase64Fallback(base64, options);
 }

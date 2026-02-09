@@ -3,15 +3,15 @@
  * Compares lookup-table fallback with native APIs.
  *
  * **Encoding (`encodeHex`)**:
- * - Native `toHex()` wins at all sizes — no threshold needed, always prefer native.
+ * - Native `toHex()` wins at all sizes — always prefer native.
  *
  * **Decoding (`decodeHex`)**:
  * - Fallback (lookup table) wins at <= 128 hex chars (64 bytes).
  * - Native `fromHex()` wins at > 128 hex chars.
  *
- * Crossover points below (sizes) were determined under:
+ * Results above were determined under:
  *   Node.js v25.6.0, AMD EPYC 7K83, Linux x86_64.
- * These thresholds may differ on other JS engines or hardware — re-run to verify.
+ * These may differ on other JS engines or hardware — re-run to verify.
  */
 
 import { bench, describe } from 'vitest';

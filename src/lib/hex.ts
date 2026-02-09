@@ -20,12 +20,6 @@ import type { DataSource } from './types.ts';
 // #region Internal Variables
 
 /**
- * Threshold (in hex string length) below which lookup-table fallback is faster than native `fromHex`.
- * For small inputs (<= 128 hex chars), pure JS is faster due to native call overhead.
- */
-const DECODE_FALLBACK_THRESHOLD = 128; // hex.length
-
-/**
  * Pre-computed byte-to-hex lookup table (256 entries).
  */
 const encodeTable = Lazy(() =>
@@ -79,8 +73,7 @@ export function encodeHex(data: DataSource): string {
 /**
  * Decodes a hexadecimal string to Uint8Array.
  *
- * Uses native `Uint8Array.fromHex` for larger inputs if available,
- * pure JS fallback for small inputs or when native API is unavailable.
+ * Uses native `Uint8Array.fromHex` if available, otherwise pure JS fallback.
  *
  * @param hex - Hexadecimal string.
  * @returns Decoded Uint8Array.
@@ -94,7 +87,7 @@ export function encodeHex(data: DataSource): string {
  * ```
  */
 export function decodeHex(hex: string): Uint8Array<ArrayBuffer> {
-    return typeof Uint8Array.fromHex === 'function' && hex.length > DECODE_FALLBACK_THRESHOLD
+    return typeof Uint8Array.fromHex === 'function'
         ? Uint8Array.fromHex(hex)
         : decodeHexFallback(hex);
 }

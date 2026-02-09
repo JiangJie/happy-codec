@@ -7,9 +7,9 @@
  * - encodeUtf8: Use 3-byte CJK chars (max bytes.push calls per string.length)
  * - decodeUtf8: Use Latin1 chars (max str += calls per byteLength)
  *
- * Crossover points below (encodeSizes, decodeSizes) were determined under:
+ * Results below (encodeSizes, decodeSizes) were determined under:
  *   Node.js v25.6.0, AMD EPYC 7K83, Linux x86_64.
- * These thresholds may differ on other JS engines or hardware — re-run to verify.
+ * These may differ on other JS engines or hardware — re-run to verify.
  */
 
 import { bench, describe } from 'vitest';
@@ -31,24 +31,16 @@ const { decodeUtf8, encodeUtf8 } = await import('../src/mod.ts');
 const textEncoder = new NativeTextEncoder();
 const textDecoder = new NativeTextDecoder('utf-8');
 
-// Test characters - chosen to maximize fallback work per unit
-const LATIN1_CHAR = 'a'; // 1 byte in UTF-8, best for decode (most str += per byte)
-const CJK_CHAR = '中'; // 3 bytes in UTF-8, best for encode (most bytes.push per char)
-const BYTE_COUNT_CJK = 3;
-
-// Sizes to find crossover point
-const encodeSizes = [21, 22]; // string.length
-const decodeSizes = [1]; // byteLength
-
-// Generate test data for encode - use 3-byte CJK chars (max bytes.push per string.length)
-const encodeStrings = encodeSizes.map(charCount => CJK_CHAR.repeat(charCount));
-
-// Generate test data for decode - use Latin1 chars (max str += per byteLength)
-const decodeBytes = decodeSizes.map(byteCount => textEncoder.encode(LATIN1_CHAR.repeat(byteCount)));
-
 // ============================================================================
 // UTF-8 Encode - 3-byte CJK Characters (worst case for fallback)
 // ============================================================================
+
+const CJK_CHAR = '中'; // 3 bytes in UTF-8, best for encode (most bytes.push per char)
+const BYTE_COUNT_CJK = 3;
+
+const encodeSizes = [21, 22]; // string.length
+
+const encodeStrings = encodeSizes.map(charCount => CJK_CHAR.repeat(charCount));
 
 encodeSizes.forEach((charCount, i) => {
     const byteCount = charCount * BYTE_COUNT_CJK; // 3 bytes per CJK char
@@ -66,6 +58,12 @@ encodeSizes.forEach((charCount, i) => {
 // ============================================================================
 // UTF-8 Decode - Latin1 Characters (worst case for fallback)
 // ============================================================================
+
+const LATIN1_CHAR = 'a'; // 1 byte in UTF-8, best for decode (most str += per byte)
+
+const decodeSizes = [1]; // byteLength
+
+const decodeBytes = decodeSizes.map(byteCount => textEncoder.encode(LATIN1_CHAR.repeat(byteCount)));
 
 decodeSizes.forEach((byteCount, i) => {
     describe(`UTF-8 Decode - ${byteCount} bytes (${byteCount} chars)`, () => {

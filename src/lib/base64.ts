@@ -1,16 +1,6 @@
 /**
  * Base64 encoding/decoding module.
  *
- * ## Implementation Strategy
- *
- * **Encoding (`encodeBase64`)**:
- * - Uses native `Uint8Array.prototype.toBase64` for larger inputs (>= 32 bytes) if available
- * - Falls back to pure JS for small inputs or when native API is unavailable
- *
- * **Decoding (`decodeBase64`)**:
- * - Uses native `Uint8Array.fromBase64` for larger inputs (>= 24 chars) if available
- * - Falls back to pure JS for small inputs or when native API is unavailable
- *
  * Derived from @std/encoding/base64 and https://github.com/cross-org/base64
  *
  * @module base64
@@ -34,15 +24,15 @@ import type { DataSource } from './types.ts';
 
 /**
  * Threshold for using native `Uint8Array.prototype.toBase64`.
- * For small inputs (<= 21 bytes), pure JS is faster due to native call overhead.
+ * For small inputs (<= 18 bytes), pure JS is faster due to native call overhead.
  */
-const ENCODE_FALLBACK_THRESHOLD = 21; // byteLength
+const ENCODE_FALLBACK_THRESHOLD = 18; // byteLength
 
 /**
  * Threshold for using native `Uint8Array.fromBase64`.
- * For small inputs (<= 88 chars), pure JS is faster due to native call overhead.
+ * For small inputs (<= 84 chars), pure JS is faster due to native call overhead.
  */
-const DECODE_FALLBACK_THRESHOLD = 88; // base64.length (base64 string length, ≈66 bytes)
+const DECODE_FALLBACK_THRESHOLD = 84; // base64.length (base64 string length, ≈63 bytes)
 
 /**
  * Common prefix shared by both base64 alphabets (first 62 characters).

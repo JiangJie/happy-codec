@@ -3,12 +3,12 @@
  * Compares happy-codec fallback implementation with native APIs.
  *
  * **Encoding (`encodeBase64`)**:
- * - Native `toBase64()` wins at >= 21 bytes.
- * - Below 21 bytes, pure JS is faster due to native call overhead.
+ * - Fallback (pure JS) wins at <= 18 bytes.
+ * - Native `toBase64()` wins at > 18 bytes.
  *
  * **Decoding (`decodeBase64`)**:
- * - Native `fromBase64()` wins at >= 88 base64 chars (≈66 bytes).
- * - Below threshold, pure JS fallback is faster.
+ * - Fallback (pure JS) wins at <= 84 base64 chars (≈63 bytes).
+ * - Native `fromBase64()` wins at > 84 base64 chars.
  *
  * Crossover points below (sizes) were determined under:
  *   Node.js v25.6.0, AMD EPYC 7K83, Linux x86_64.
@@ -33,7 +33,7 @@ const { encodeBase64, decodeBase64 } = await import('../src/mod.ts');
 // Base64 Encode - fallback vs native toBase64
 // ============================================================================
 
-const encodeSizes = [20, 21];
+const encodeSizes = [16, 18, 19, 20];
 
 const encodeBuffers = encodeSizes.map(size => {
     const bytes = new Uint8Array(size);
@@ -57,7 +57,7 @@ encodeSizes.forEach((size, i) => {
 // Base64 Decode - fallback vs native fromBase64
 // ============================================================================
 
-const decodeSizes = [84, 88];
+const decodeSizes = [80, 84, 88];
 
 const base64Strings = decodeSizes.map(size => {
     const byteCount = (size * 3) / 4;

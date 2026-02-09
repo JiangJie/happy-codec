@@ -38,7 +38,7 @@ const BYTE_COUNT_CJK = 3;
 
 // Sizes to find crossover point
 const encodeSizes = [21, 22]; // string.length
-const decodeSizes = [3, 4, 5, 6, 7]; // byteLength
+const decodeSizes = [1]; // byteLength
 
 // Generate test data for encode - use 3-byte CJK chars (max bytes.push per string.length)
 const encodeStrings = encodeSizes.map(charCount => CJK_CHAR.repeat(charCount));

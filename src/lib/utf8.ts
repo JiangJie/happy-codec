@@ -7,17 +7,13 @@ import { assertInputIsString, bufferSourceToBytes, Lazy, typedArrayToString } fr
 
 // #region Internal Variables
 /**
- * Threshold for using fallback implementation.
+ * Threshold for using fallback encode implementation.
  * For small inputs, pure JS is faster than native API due to call overhead.
  *
- * ENCODE: 21 chars of 3-byte CJK characters = 63 bytes (worst case),
+ * 21 chars of 3-byte CJK characters = 63 bytes (worst case),
  * benchmarked with maximum bytes.push() calls per string.length.
- *
- * DECODE: 4 bytes of Latin1 characters (worst case),
- * benchmarked with maximum str += calls per byteLength.
  */
 const ENCODE_FALLBACK_THRESHOLD = 21; // string.length (up to 63 bytes)
-const DECODE_FALLBACK_THRESHOLD = 4; // byteLength
 
 // Cached TextEncoder instance
 const encoder = Lazy(() => new TextEncoder());
@@ -59,7 +55,7 @@ export function encodeUtf8(input: string): Uint8Array<ArrayBuffer> {
 /**
  * Decodes binary data to string (UTF-8 decoding).
  *
- * Uses pure JS for small data (byteLength <= 4) and native `TextDecoder` for larger ones.
+ * Uses native `TextDecoder` when available (faster at all input sizes).
  * Falls back to pure JS when `TextDecoder` is not available.
  *
  * @param data - The binary data to decode.
@@ -92,9 +88,8 @@ export function decodeUtf8(data: BufferSource, options?: TextDecoderOptions): st
         ignoreBOM = false,
     } = options ?? {};
 
-    // Use fallback for small inputs (faster due to native API call overhead)
-    // or when TextDecoder is not available
-    if (typeof TextDecoder === 'function' && data.byteLength > DECODE_FALLBACK_THRESHOLD) {
+    // Use native TextDecoder when available (faster at all input sizes)
+    if (typeof TextDecoder === 'function') {
         const decoderInstance = fatal
             ? (ignoreBOM ? fatalDecoderIgnoreBOM : fatalDecoder)
             : (ignoreBOM ? decoderIgnoreBOM : decoder);

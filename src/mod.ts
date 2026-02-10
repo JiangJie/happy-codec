@@ -1,10 +1,10 @@
 /**
- * happy-codec - Zero-dependency codec library for Base64, Hex, UTF-8 and ByteString encoding/decoding.
+ * happy-codec - Zero-dependency codec library for UTF-8, Base64, Hex and ByteString encoding/decoding.
  *
  * Provides unified APIs for:
+ * - UTF-8 encoding/decoding
  * - Base64 encoding/decoding
  * - Hex (hexadecimal) encoding/decoding
- * - UTF-8 encoding/decoding
  * - ByteString encoding/decoding
  *
  * @module happy-codec

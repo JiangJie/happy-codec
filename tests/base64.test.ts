@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 import type { Uint8ArrayConstructorWithBase64Hex, Uint8ArrayWithBase64Hex } from '../src/internal/mod.ts';
-import { decodeBase64, encodeBase64, type DecodeBase64Options, type EncodeBase64Options } from '../src/mod.ts';
+import { decodeBase64, encodeBase64, type DataSource, type DecodeBase64Options, type EncodeBase64Options } from '../src/mod.ts';
 
 test('encodeBase64 with DataView', () => {
     const buffer = new ArrayBuffer(8);
@@ -179,8 +179,8 @@ describe('decodeBase64 with options', () => {
 });
 
 describe('Base64 decodeBase64 fallback implementation', () => {
-    let decodeBase64Fallback: (data: string, options?: DecodeBase64Options) => Uint8Array<ArrayBuffer>;
-    let encodeBase64Fallback: (data: string | BufferSource, options?: EncodeBase64Options) => string;
+    let decodeBase64Fallback: (data: string, options?: DecodeBase64Options) => Uint8Array;
+    let encodeBase64Fallback: (data: DataSource, options?: EncodeBase64Options) => string;
     let originalFromBase64: Uint8ArrayConstructorWithBase64Hex['fromBase64'];
     let originalToBase64: Uint8ArrayWithBase64Hex['toBase64'];
 

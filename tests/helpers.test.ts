@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 import { bufferSourceToBytes } from '../src/internal/mod.ts';
 import { decodeBase64, decodeByteString, decodeHex, encodeHex, encodeUtf8 } from '../src/mod.ts';
 
-test('bufferSourceToBytes throws TypeError for invalid BufferSource', () => {
+test('bufferSourceToBytes throws TypeError for invalid AllowSharedBufferSource', () => {
     // @ts-expect-error - intentionally passing invalid type for testing
     expect(() => bufferSourceToBytes(123)).toThrow(TypeError);
     // @ts-expect-error - intentionally passing invalid type for testing

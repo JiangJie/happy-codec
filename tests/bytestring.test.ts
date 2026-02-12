@@ -41,7 +41,7 @@ test('encodeByteString handles unicode string', () => {
     expect(result).toBe(expected);
 });
 
-test('encodeByteString handles BufferSource input', () => {
+test('encodeByteString handles AllowSharedBufferSource input', () => {
     const buffer = new Uint8Array([72, 101, 108, 108, 111]);
     const result = encodeByteString(buffer);
     expect(result).toBe('Hello');

@@ -97,8 +97,8 @@ test('decodeUtf8 uses native TextDecoder with ignoreBOM option for large data', 
 });
 
 describe('UTF-8 fallback implementation', () => {
-    let encodeUtf8Fallback: (data: string) => Uint8Array<ArrayBuffer>;
-    let decodeUtf8Fallback: (data: BufferSource, options?: TextDecoderOptions) => string;
+    let encodeUtf8Fallback: (input: string) => Uint8Array;
+    let decodeUtf8Fallback: (data: AllowSharedBufferSource, options?: TextDecoderOptions) => string;
     let originalTextEncoder: typeof TextEncoder;
     let originalTextDecoder: typeof TextDecoder;
 

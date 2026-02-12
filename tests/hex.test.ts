@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
-import { decodeHex, encodeHex } from '../src/mod.ts';
+import { decodeHex, encodeHex, type DataSource } from '../src/mod.ts';
 import type { Uint8ArrayConstructorWithBase64Hex, Uint8ArrayWithBase64Hex } from '../src/internal/mod.ts';
 
 test('encodeHex converts buffer to hex string', () => {
@@ -88,8 +88,8 @@ test('hex round-trip with large data above native threshold', () => {
 });
 
 describe('Hex fallback implementation', () => {
-    let encodeHexFallback: (data: string | BufferSource) => string;
-    let decodeHexFallback: (hex: string) => Uint8Array<ArrayBuffer>;
+    let encodeHexFallback: (data: DataSource) => string;
+    let decodeHexFallback: (hex: string) => Uint8Array;
     let originalToHex: Uint8ArrayWithBase64Hex['toHex'];
     let originalFromHex: Uint8ArrayConstructorWithBase64Hex['fromHex'];
 

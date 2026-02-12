@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-12
+
+### Added
+
+- `SharedArrayBuffer` support (zero-copy) for all encoding functions
+- `AllowSharedBufferSource` input type across the public API (`DataSource`, `decodeUtf8`, `bufferSourceToBytes`)
+
+### Changed
+
+- `DataSource` type widened from `string | BufferSource` to `string | AllowSharedBufferSource`
+- `bufferSourceToBytes` return type simplified from `Uint8Array<ArrayBuffer>` to `Uint8Array`
+
 ## [1.1.0] - 2026-02-09
 
 ### Added
@@ -43,5 +55,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ByteString encoding/decoding
 - 100% test coverage
 
+[1.2.0]: https://github.com/JiangJie/happy-codec/releases/tag/v1.2.0
 [1.1.0]: https://github.com/JiangJie/happy-codec/releases/tag/v1.1.0
 [1.0.0]: https://github.com/JiangJie/happy-codec/releases/tag/v1.0.0

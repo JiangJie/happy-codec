@@ -9,12 +9,12 @@ import { dataSourceToBytes } from './helpers.ts';
 import type { DataSource } from './types.ts';
 
 /**
- * Encodes a string or BufferSource to a byte string, with each byte as a character.
+ * Encodes a string or AllowSharedBufferSource to a byte string, with each byte as a character.
  *
  * Uses `String.fromCharCode.apply` in chunks of 8192 bytes for efficient
  * batch conversion while staying safe from call-stack overflow.
  *
- * @param data - The string or BufferSource to encode.
+ * @param data - The string or AllowSharedBufferSource to encode.
  * @returns Byte string.
  * @throws {TypeError} If the input is not a string, ArrayBuffer, or ArrayBufferView.
  * @since 1.0.0

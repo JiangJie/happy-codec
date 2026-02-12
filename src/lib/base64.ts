@@ -93,7 +93,7 @@ export interface DecodeBase64Options {
 }
 
 /**
- * Converts DataSource (string or BufferSource) to a Base64 encoded string.
+ * Converts DataSource (string or AllowSharedBufferSource) to a Base64 encoded string.
  *
  * Uses native `Uint8Array.prototype.toBase64` if available, otherwise pure JS fallback.
  *
@@ -108,7 +108,7 @@ export interface DecodeBase64Options {
  * const encoded = encodeBase64('Hello, World!');
  * console.log(encoded); // 'SGVsbG8sIFdvcmxkIQ=='
  *
- * // BufferSource input
+ * // AllowSharedBufferSource input
  * const buffer = new Uint8Array([72, 101, 108, 108, 111]);
  * const base64 = encodeBase64(buffer);
  * console.log(base64); // 'SGVsbG8='
@@ -172,7 +172,7 @@ export function decodeBase64(base64: string, options?: DecodeBase64Options): Uin
  * @param options - Encoding options.
  * @returns Base64 encoded string.
  */
-function encodeBase64Fallback(bytes: Uint8Array<ArrayBuffer>, options?: EncodeBase64Options): string {
+function encodeBase64Fallback(bytes: Uint8Array, options?: EncodeBase64Options): string {
     const {
         alphabet = 'base64',
         omitPadding = false,

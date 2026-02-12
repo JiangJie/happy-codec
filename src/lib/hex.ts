@@ -37,7 +37,7 @@ const decodeTable = Lazy(() => {
 /**
  * Encodes DataSource to a hexadecimal string.
  * - String: First UTF-8 encoded, then converted to hexadecimal
- * - BufferSource: Directly converted to hexadecimal
+ * - AllowSharedBufferSource: Directly converted to hexadecimal
  *
  * Uses native `Uint8Array.prototype.toHex` if available, otherwise pure JS fallback.
  *
@@ -94,7 +94,7 @@ export function decodeHex(hex: string): Uint8Array<ArrayBuffer> {
  * @param bytes - The bytes to encode.
  * @returns Hexadecimal string.
  */
-function encodeHexFallback(bytes: Uint8Array<ArrayBuffer>): string {
+function encodeHexFallback(bytes: Uint8Array): string {
     const table = encodeTable.force();
 
     let result = '';

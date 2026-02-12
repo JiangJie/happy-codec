@@ -5,7 +5,7 @@
  */
 
 /**
- * Data source type, can be a string or BufferSource.
+ * Data source type, can be a string or AllowSharedBufferSource.
  *
  * @since 1.0.0
  * @example
@@ -18,6 +18,9 @@
  *
  * // Uint8Array type
  * const u8aData: DataSource = new Uint8Array([1, 2, 3]);
+ *
+ * // SharedArrayBuffer type
+ * const sabData: DataSource = new SharedArrayBuffer(8);
  * ```
  */
-export type DataSource = string | BufferSource;
+export type DataSource = string | AllowSharedBufferSource;

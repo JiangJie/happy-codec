@@ -76,7 +76,7 @@ export function encodeUtf8(input: string): Uint8Array<ArrayBuffer> {
  * decodeUtf8(withBOM, { ignoreBOM: true }); // '\uFEFFHi'
  * ```
  */
-export function decodeUtf8(data: BufferSource, options?: TextDecoderOptions): string {
+export function decodeUtf8(data: AllowSharedBufferSource, options?: TextDecoderOptions): string {
     const {
         fatal = false,
         ignoreBOM = false,
@@ -140,12 +140,12 @@ function encodeUtf8Fallback(input: string): Uint8Array<ArrayBuffer> {
 /**
  * Pure JS implementation of UTF-8 decoding.
  *
- * @param data - The BufferSource to decode.
+ * @param data - The AllowSharedBufferSource to decode.
  * @param options - Decoding options (same as TextDecoderOptions).
  * @returns Decoded string.
  * @throws {TypeError} If `options.fatal` is `true` and the input contains invalid UTF-8 sequences.
  */
-function decodeUtf8Fallback(data: BufferSource, options: TextDecoderOptions): string {
+function decodeUtf8Fallback(data: AllowSharedBufferSource, options: TextDecoderOptions): string {
     const bytes = bufferSourceToBytes(data);
 
     const { fatal, ignoreBOM } = options;

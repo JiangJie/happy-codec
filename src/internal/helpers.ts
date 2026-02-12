@@ -27,19 +27,18 @@ export function assertInputIsString(input: string): void {
 }
 
 /**
- * Converts BufferSource to Uint8Array.
+ * Converts AllowSharedBufferSource to Uint8Array.
  *
- * @param input - The BufferSource to convert.
+ * @param input - The AllowSharedBufferSource to convert.
  * @returns Uint8Array.
- * @throws {TypeError} If the input is not an ArrayBuffer or ArrayBufferView.
+ * @throws {TypeError} If the input is not an ArrayBuffer, SharedArrayBuffer, or ArrayBufferView.
  */
-export function bufferSourceToBytes(input: BufferSource): Uint8Array<ArrayBuffer> {
+export function bufferSourceToBytes(input: AllowSharedBufferSource): Uint8Array {
     if (input instanceof Uint8Array) {
-        // Safe: Uint8Array.prototype.buffer is always an ArrayBuffer
-        return input as Uint8Array<ArrayBuffer>;
+        return input;
     }
 
-    if (input instanceof ArrayBuffer) {
+    if (input instanceof ArrayBuffer || (typeof SharedArrayBuffer === 'function' && input instanceof SharedArrayBuffer)) {
         return new Uint8Array(input);
     }
 
@@ -47,7 +46,7 @@ export function bufferSourceToBytes(input: BufferSource): Uint8Array<ArrayBuffer
         return new Uint8Array(input.buffer, input.byteOffset, input.byteLength);
     }
 
-    throw new TypeError('Input argument must be an ArrayBuffer or ArrayBufferView');
+    throw new TypeError('Input argument must be an ArrayBuffer, SharedArrayBuffer, or ArrayBufferView');
 }
 
 /**

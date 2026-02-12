@@ -18,6 +18,19 @@ test('encodeHex works with ArrayBuffer', () => {
     expect(encodeHex(buffer)).toBe('deadbeef');
 });
 
+test('encodeHex works with SharedArrayBuffer', () => {
+    const sab = new SharedArrayBuffer(4);
+    new Uint8Array(sab).set([0xde, 0xad, 0xbe, 0xef]);
+    expect(encodeHex(sab)).toBe('deadbeef');
+});
+
+test('encodeHex works with Uint8Array backed by SharedArrayBuffer', () => {
+    const sab = new SharedArrayBuffer(4);
+    const view = new Uint8Array(sab);
+    view.set([0xff, 0x00, 0x80, 0x01]);
+    expect(encodeHex(view)).toBe('ff008001');
+});
+
 test('encodeHex with single byte values', () => {
     expect(encodeHex(new Uint8Array([0]))).toBe('00');
     expect(encodeHex(new Uint8Array([255]))).toBe('ff');

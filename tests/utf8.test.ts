@@ -28,6 +28,21 @@ test('encodeUtf8 returns Uint8Array', () => {
     expect(result).toBeInstanceOf(Uint8Array);
 });
 
+test('decodeUtf8 with SharedArrayBuffer', () => {
+    const bytes = [228, 189, 160, 229, 165, 189]; // '你好' in UTF-8
+    const sab = new SharedArrayBuffer(bytes.length);
+    new Uint8Array(sab).set(bytes);
+    expect(decodeUtf8(sab)).toBe('你好');
+});
+
+test('decodeUtf8 with Uint8Array backed by SharedArrayBuffer', () => {
+    const bytes = [72, 101, 108, 108, 111]; // 'Hello'
+    const sab = new SharedArrayBuffer(bytes.length);
+    const view = new Uint8Array(sab);
+    view.set(bytes);
+    expect(decodeUtf8(view)).toBe('Hello');
+});
+
 test('decodeUtf8 replaces invalid bytes with U+FFFD by default', () => {
     // 0xFF is invalid UTF-8 byte
     const buffer = new Uint8Array([0xff, 0xfe]);

@@ -12,6 +12,19 @@ test('encodeBase64 with DataView', () => {
     expect(encodeBase64(dataView)).toBe('SGVsbG8=');
 });
 
+test('encodeBase64 with SharedArrayBuffer', () => {
+    const sab = new SharedArrayBuffer(5);
+    new Uint8Array(sab).set([72, 101, 108, 108, 111]); // "Hello"
+    expect(encodeBase64(sab)).toBe('SGVsbG8=');
+});
+
+test('encodeBase64 with Uint8Array backed by SharedArrayBuffer', () => {
+    const sab = new SharedArrayBuffer(5);
+    const view = new Uint8Array(sab);
+    view.set([72, 101, 108, 108, 111]);
+    expect(encodeBase64(view)).toBe('SGVsbG8=');
+});
+
 test('base64 handles binary data correctly', () => {
     // Test with all possible byte values (0-255)
     const allBytes = new Uint8Array(256);

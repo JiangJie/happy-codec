@@ -47,6 +47,12 @@ test('encodeByteString handles AllowSharedBufferSource input', () => {
     expect(result).toBe('Hello');
 });
 
+test('encodeByteString with SharedArrayBuffer', () => {
+    const sab = new SharedArrayBuffer(5);
+    new Uint8Array(sab).set([72, 101, 108, 108, 111]);
+    expect(encodeByteString(sab)).toBe('Hello');
+});
+
 test('encodeByteString works with DataView', () => {
     const buffer = new ArrayBuffer(8);
     const fullView = new Uint8Array(buffer);

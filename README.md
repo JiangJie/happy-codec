@@ -20,6 +20,7 @@ Zero-dependency codec library for UTF-8, Base64, Hex and ByteString encoding/dec
 
 - **Zero dependencies** - No external runtime dependencies
 - **Universal runtime** - Works in any JavaScript environment (Browser, Node.js, Deno, Bun, Web Workers, 小程序/小游戏 (如微信小游戏), etc.) regardless of DOM/BOM support
+- **SharedArrayBuffer support** - All encoding functions accept `SharedArrayBuffer` input (zero-copy)
 - **UTF-8** - Native `TextEncoder`/`TextDecoder` when available, pure JS fallback otherwise
 - **Base64** - Native `Uint8Array.prototype.toBase64`/`Uint8Array.fromBase64` (ES2026) when available, pure JS fallback otherwise
 - **Hex** - Native `Uint8Array.prototype.toHex`/`Uint8Array.fromHex` (ES2026) when available, pure JS fallback otherwise

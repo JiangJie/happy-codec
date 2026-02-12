@@ -37,8 +37,9 @@ src/
 ├── mod.ts              # Entry point, re-exports src/lib/mod.ts
 ├── internal/           # Internal utilities (not exported)
 │   ├── mod.ts
-│   ├── helpers.ts      # bufferSourceToBytes() - converts BufferSource to Uint8Array
-│   └── lazy.ts         # Lazy<T> - deferred initialization wrapper
+│   ├── helpers.ts      # bufferSourceToBytes() - converts AllowSharedBufferSource to Uint8Array
+│   ├── lazy.ts         # Lazy<T> - deferred initialization wrapper
+│   └── types.ts        # Uint8Array ES2026 method type interfaces
 └── lib/                # Public API
     ├── mod.ts          # Re-exports all public modules
     ├── types.ts        # DataSource type definition
@@ -80,9 +81,9 @@ const encoder = Lazy(() => new TextEncoder());
 
 ### Input Type Handling
 
-- `DataSource = string | BufferSource` - common input type for encoding functions
+- `DataSource = string | AllowSharedBufferSource` - common input type for encoding functions
 - `dataSourceToBytes()` - converts DataSource to Uint8Array (strings are UTF-8 encoded)
-- `bufferSourceToBytes()` - converts BufferSource to Uint8Array
+- `bufferSourceToBytes()` - converts AllowSharedBufferSource to Uint8Array
 
 ## Key Implementation Notes
 

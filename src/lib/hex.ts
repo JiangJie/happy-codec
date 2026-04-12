@@ -13,7 +13,7 @@ import type { DataSource } from './types.ts';
 /**
  * Pre-computed byte-to-hex lookup table (256 entries).
  */
-const encodeTable = Lazy(() =>
+const encodeTable = /*#__PURE__*/ Lazy(() =>
     Array.from({ length: 256 }, (_, i) => i.toString(16).padStart(2, '0')),
 );
 
@@ -21,7 +21,7 @@ const encodeTable = Lazy(() =>
  * Pre-computed charCode-to-nibble decode table.
  * Valid hex chars map to 0-15, everything else maps to 0xff.
  */
-const decodeTable = Lazy(() => {
+const decodeTable = /*#__PURE__*/ Lazy(() => {
     // 128 entries covers all ASCII charCodes (max hex char 'f' = 0x66 = 102).
     // Fill with 0xff as invalid marker — valid nibbles are 0-15,
     // so (hi | lo) > 0x0f detects any non-hex character.

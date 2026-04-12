@@ -18,22 +18,22 @@ const commonChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456
 /**
  * Standard base64 character array.
  */
-const base64abc = `${commonChars}+/`.split('');
+const base64abc = /*#__PURE__*/ `${commonChars}+/`.split('');
 
 /**
  * Base64url character array (RFC 4648 §5): uses `-` and `_` instead of `+` and `/`.
  */
-const base64urlAbc = `${commonChars}-_`.split('');
+const base64urlAbc = /*#__PURE__*/ `${commonChars}-_`.split('');
 
 /**
  * Standard base64 character lookup table (lazily initialized).
  */
-const lookup = Lazy(() => buildLookup(base64abc));
+const lookup = /*#__PURE__*/ Lazy(() => buildLookup(base64abc));
 
 /**
  * Base64url character lookup table (lazily initialized).
  */
-const lookupUrl = Lazy(() => buildLookup(base64urlAbc));
+const lookupUrl = /*#__PURE__*/ Lazy(() => buildLookup(base64urlAbc));
 
 /**
  * Validation regex for standard base64.

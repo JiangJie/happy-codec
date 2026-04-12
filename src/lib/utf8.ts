@@ -12,13 +12,13 @@ import { assertInputIsString, bufferSourceToBytes, Lazy, typedArrayToString } fr
 const LABEL = 'utf-8';
 
 // Cached TextEncoder instance
-const encoder = Lazy(() => new TextEncoder());
+const encoder = /*#__PURE__*/ Lazy(() => new TextEncoder());
 
 // Cached TextDecoder instances for all combinations of fatal × ignoreBOM
-const decoder = Lazy(() => new TextDecoder(LABEL, { fatal: false, ignoreBOM: false }));
-const decoderIgnoreBOM = Lazy(() => new TextDecoder(LABEL, { fatal: false, ignoreBOM: true }));
-const fatalDecoder = Lazy(() => new TextDecoder(LABEL, { fatal: true, ignoreBOM: false }));
-const fatalDecoderIgnoreBOM = Lazy(() => new TextDecoder(LABEL, { fatal: true, ignoreBOM: true }));
+const decoder = /*#__PURE__*/ Lazy(() => new TextDecoder(LABEL, { fatal: false, ignoreBOM: false }));
+const decoderIgnoreBOM = /*#__PURE__*/ Lazy(() => new TextDecoder(LABEL, { fatal: false, ignoreBOM: true }));
+const fatalDecoder = /*#__PURE__*/ Lazy(() => new TextDecoder(LABEL, { fatal: true, ignoreBOM: false }));
+const fatalDecoderIgnoreBOM = /*#__PURE__*/ Lazy(() => new TextDecoder(LABEL, { fatal: true, ignoreBOM: true }));
 
 // #endregion
 

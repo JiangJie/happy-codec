@@ -3,7 +3,7 @@
   "description": "Zero-dependency codec library for Base64, Hex, UTF-8 and ByteString encoding/decoding.",
   "author": "jiang115jie@gmail.com",
   "license": "MIT",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "type": "module",
   "main": "dist/main.cjs",
   "module": "dist/main.mjs",

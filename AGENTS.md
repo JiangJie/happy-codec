@@ -1,6 +1,6 @@
-# CODEBUDDY.md
+# AGENTS.md
 
-This file provides guidance to CodeBuddy Code when working with code in this repository.
+This file provides guidance to AI coding agents when working with code in this repository.
 
 ## Commands
 
@@ -38,7 +38,7 @@ src/
 ├── internal/           # Internal utilities (not exported)
 │   ├── mod.ts
 │   ├── helpers.ts      # bufferSourceToBytes() - converts AllowSharedBufferSource to Uint8Array
-│   ├── lazy.ts         # Lazy<T> - deferred initialization wrapper
+│   ├── lazy.ts         # Lazy() - deferred initialization wrapper
 │   └── types.ts        # Uint8Array ES2026 method type interfaces
 └── lib/                # Public API
     ├── mod.ts          # Re-exports all public modules
